@@ -56,10 +56,11 @@ export const createActionColumn = <T>(
   id: ACTIONS_ID_COLUMN,
   accessorKey: ACTIONS_ID_COLUMN,
   header,
+  meta: { class: { th: 'actions' } },
   cell: ({ row }) =>
     h(
       'div',
-      { class: 'flex gap-2' },
+      { class: 'flex gap-2 actions' },
       buttons.map((button) => {
         for (const key of ['edit', 'delete'] as const) {
           if (button[key]) {

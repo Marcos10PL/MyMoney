@@ -12,3 +12,10 @@ export const loginFieldSchema = z
   .string()
   .trim()
   .min(VALIDATION.LOGIN_MIN_LENGTH, 'Login jest zbyt krótki.')
+
+export const textFieldSchema = (min: number, max: number) =>
+  z
+    .string()
+    .trim()
+    .min(min, `Minimalna długość pola: ${min}`)
+    .max(max, `Maksymalna długość pola: ${max}`)
