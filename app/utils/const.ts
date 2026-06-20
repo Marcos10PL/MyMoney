@@ -4,4 +4,7 @@ export const LINKS = {
   TRANSACTIONS: '/transactions',
   ACCOUNTS: '/accounts',
   CATEGORIES: '/categories',
+  BANKS: '/banks',
 }
+
+export const ACTIONS_ID_COLUMN = 'actions'

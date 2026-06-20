@@ -12,3 +12,6 @@ export const loginFieldSchema = z
   .max(VALIDATION.LOGIN_MAX_LENGTH)
 
 export const idFieldSchema = z.uuid()
+
+export const textFieldSchema = (min: number, max: number) =>
+  z.string().trim().min(min).max(max)

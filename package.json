@@ -17,7 +17,9 @@
   "dependencies": {
     "@iconify-json/lucide": "^1.2.112",
     "@iconify-json/simple-icons": "^1.2.86",
+    "@internationalized/date": "3.12.1",
     "@nuxt/ui": "^4.8.2",
+    "@tanstack/vue-table": "^8.21.3",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",

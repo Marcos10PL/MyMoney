@@ -1,18 +1,55 @@
-@import "tailwindcss";
-@import "@nuxt/ui";
+@import 'tailwindcss';
+@import '@nuxt/ui';
 
 @theme static {
   --font-sans: 'Public Sans', sans-serif;
 
-  --color-green-50: #EFFDF5;
-  --color-green-100: #D9FBE8;
-  --color-green-200: #B3F5D1;
-  --color-green-300: #75EDAE;
-  --color-green-400: #00DC82;
-  --color-green-500: #00C16A;
-  --color-green-600: #00A155;
-  --color-green-700: #007F45;
+  --color-green-50: #effdf5;
+  --color-green-100: #d9fbe8;
+  --color-green-200: #b3f5d1;
+  --color-green-300: #75edae;
+  --color-green-400: #00dc82;
+  --color-green-500: #00c16a;
+  --color-green-600: #00a155;
+  --color-green-700: #007f45;
   --color-green-800: #016538;
-  --color-green-900: #0A5331;
-  --color-green-950: #052E16;
+  --color-green-900: #0a5331;
+  --color-green-950: #052e16;
+}
+
+/* actions column */
+.pin-actions table tr td:last-child:has(.actions),
+.pin-actions table thead tr th.actions {
+  position: sticky;
+  right: 0;
+  z-index: 10;
+  background-color: var(--color-gray-100);
+}
+
+.dark .pin-actions table tr td:last-child:has(.actions),
+.dark .pin-actions table thead tr th.actions {
+  background-color: color-mix(
+    in srgb,
+    var(--color-gray-800),
+    var(--color-gray-900)
+  );
+}
+
+.pin-actions table tr:first-child td:last-child:has(.actions)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--color-neutral-300);
+  pointer-events: none;
+  z-index: 20;
+}
+
+@media (max-width: 639px) {
+  .pin-actions table tr td:last-child:has(.actions),
+  .pin-actions table thead tr th.actions {
+    max-width: 160px;
+  }
 }

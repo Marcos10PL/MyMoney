@@ -5,3 +5,6 @@ allowBuilds:
   esbuild: false
   unrs-resolver: false
   vue-demi: false
+
+overrides:
+  '@internationalized/date': '3.12.1'
