@@ -5,7 +5,7 @@ type CreateProps =
 
 type TableProps =
   // eslint-disable-next-line
-  { table: any; tableId: string } | { table?: undefined; tableId?: never }
+  { table?: any }
 
 type Props = CreateProps &
   TableProps & {
@@ -16,6 +16,9 @@ type Props = CreateProps &
 
 const { table, showActionsPin = true } = defineProps<Props>()
 
+const columnVisibility = defineModel<Record<string, boolean>>({
+  default: () => ({}),
+})
 const emit = defineEmits<{ (e: 'create' | 'refresh'): void }>()
 
 const hasActions = computed(
@@ -89,7 +92,11 @@ watch(pinActions, (newVal) => {
     >
       <slot />
       <div class="flex gap-2 items-center w-full">
-        <SubHeaderFilterColumns :table-id :table class="w-full" />
+        <SubHeaderFilterColumns
+          v-model="columnVisibility"
+          :table
+          class="w-full"
+        />
         <UTooltip
           v-if="hasActions"
           :text="pinActions ? 'Odepnij akcje' : 'Przypnij akcje'"

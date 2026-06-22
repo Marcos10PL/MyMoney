@@ -20,9 +20,10 @@ export const categories = pgTable(
       .notNull()
       .references(() => users.id),
 
+    // for future
     parentId: uuid('parent_id').references((): AnyPgColumn => categories.id),
 
-    name: text('name').notNull(),
+    name: text('name').notNull().unique(),
     type: categoryTypeEnum('type').notNull(),
 
     createdAt: timestamp('created_at', { withTimezone: true })

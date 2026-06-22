@@ -12,13 +12,14 @@ export default defineEventHandler(async (event) => {
   const [transaction] = await db
     .update(transactions)
     .set({
+      name: body.name,
       accountId: body.accountId,
-      categoryId: body.categoryId,
-      toAccountId: body.toAccountId,
+      categoryId: body.categoryId ?? null,
+      toAccountId: null,
       counterparty: body.counterparty,
       type: body.type,
       amount: String(body.amount),
-      description: body.description,
+      description: body.description ?? null,
       date: new Date(body.date),
     })
     .where(and(eq(transactions.id, id), eq(transactions.userId, user.id)))

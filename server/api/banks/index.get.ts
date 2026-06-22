@@ -10,6 +10,6 @@ export default defineEventHandler(async (event) => {
   return {
     success: true,
     message: 'Banks fetched successfully',
-    data: result,
-  } satisfies APIResponse<AppBank[]>
+    data: result.map((bank) => mapBankToDTO(bank)),
+  } satisfies APIResponse<Bank[]>
 })

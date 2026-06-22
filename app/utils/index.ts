@@ -4,3 +4,6 @@ export const returnErrorStatus = (error: unknown) => {
 
   return statusCode
 }
+
+export const modalCloseAnimation = async () =>
+  await new Promise((resolve) => setTimeout(resolve, 190))

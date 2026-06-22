@@ -1,5 +1,5 @@
 <script setup lang="ts">
-type ValueType = string | number | undefined
+type ValueType = string | number | boolean | undefined
 type ValuesType = ValueType | ValueType[]
 
 const { items, multiple = false } = defineProps<{

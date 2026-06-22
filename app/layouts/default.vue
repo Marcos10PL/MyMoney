@@ -1,5 +1,11 @@
 <script setup lang="ts">
 const open = ref(false)
+
+const route = useRoute()
+watch(
+  () => route.path,
+  () => (open.value = false)
+)
 </script>
 
 <template>

@@ -56,10 +56,11 @@ export const createActionColumn = <T>(
   id: ACTIONS_ID_COLUMN,
   accessorKey: ACTIONS_ID_COLUMN,
   header,
+  meta: { class: { th: 'actions' } },
   cell: ({ row }) =>
     h(
       'div',
-      { class: 'flex gap-2' },
+      { class: 'flex gap-2 actions' },
       buttons.map((button) => {
         for (const key of ['edit', 'delete'] as const) {
           if (button[key]) {
@@ -169,13 +170,15 @@ export const createColumns = <T extends Record<string, unknown>>(
 
           const value: VNode | string | null = opts.isDate
             ? formatDate(raw as string | null, { withTime: opts.withTime })
-            : opts.isCurrency
-              ? formatCurrency(raw != null ? Number(raw) : null)
-              : opts.isBoolean
-                ? raw
-                  ? 'Tak'
-                  : 'Nie'
-                : (raw ?? '--').toString()
+            : opts.isPercentage
+              ? `${formatNumber(Number(raw))}%`
+              : opts.isCurrency
+                ? formatCurrency(raw != null ? Number(raw) : null)
+                : opts.isBoolean
+                  ? raw
+                    ? 'Tak'
+                    : 'Nie'
+                  : (raw ?? '--').toString()
 
           return h('span', {}, value || '--')
         },
@@ -201,6 +204,7 @@ type ColumnOptions<T> = {
     { isCurrency: true },
     { isBoolean: true },
     { isPopover: true },
+    { isPercentage: true },
     object,
   ]
 >

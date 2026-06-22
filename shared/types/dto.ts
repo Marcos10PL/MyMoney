@@ -1,5 +1,10 @@
-export type Account = Omit<AppAccount, 'userId' | 'bankId'> & {
-  bank: Pick<AppBank, 'id' | 'name'> | null
+export type Bank = Pick<AppBank, 'id' | 'name'>
+
+export type Account = Omit<
+  AppAccount,
+  'userId' | 'bankId' | 'createdAt' | 'updatedAt'
+> & {
+  bank: Bank | null
 }
 
 export type Transaction = Omit<
@@ -11,6 +16,7 @@ export type Transaction = Omit<
   toAccount: Pick<AppAccount, 'id' | 'name'> | null
 }
 
-export type Category = Omit<AppCategory, 'userId' | 'deletedAt'> & {
-  parent: Pick<AppCategory, 'id' | 'name'> | null
-}
+export type Category = Omit<
+  AppCategory,
+  'userId' | 'createdAt' | 'updatedAt' | 'parentId'
+>
