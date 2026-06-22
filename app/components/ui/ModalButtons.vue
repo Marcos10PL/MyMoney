@@ -27,7 +27,9 @@ const emit = defineEmits<{
         :color="type === 'error' ? 'error' : 'primary'"
         block
         :loading="loading"
+        type="submit"
         @click="emit('confirm')"
+        @keydown.enter="emit('confirm')"
       >
         {{ label }}
       </UButton>

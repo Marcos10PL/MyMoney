@@ -37,6 +37,6 @@ export default defineEventHandler(async (event) => {
   return {
     success: true,
     message: 'Bank updated successfully',
-    data: bank,
-  } satisfies APIResponse<AppBank>
+    data: mapBankToDTO(bank),
+  } satisfies APIResponse<Bank>
 })

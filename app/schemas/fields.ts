@@ -13,6 +13,8 @@ export const loginFieldSchema = z
   .trim()
   .min(VALIDATION.LOGIN_MIN_LENGTH, 'Login jest zbyt krótki.')
 
+export const idFieldSchema = z.uuid('Pole jest wymagane')
+
 export const textFieldSchema = (min: number, max: number) =>
   z
     .string()

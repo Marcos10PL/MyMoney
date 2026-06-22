@@ -23,9 +23,12 @@ export default defineEventHandler(async (event) => {
     .values({ userId: user.id, name: body.name })
     .returning()
 
+  if (!bank)
+    throw createError({ statusCode: 500, message: 'Failed to create bank' })
+
   return {
     success: true,
     message: 'Bank created successfully',
-    data: bank,
-  } satisfies APIResponse<AppBank>
+    data: mapBankToDTO(bank),
+  } satisfies APIResponse<Bank>
 })

@@ -1,11 +1,18 @@
 <script setup lang="ts">
-const props = defineProps<{
+const { table } = defineProps<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   table: any
 }>()
 
+const columnVisibility = defineModel<Record<string, boolean>>({
+  default: () => ({}),
+})
+
 const toggle = (id: string, checked: boolean) => {
-  props.table?.tableApi?.getColumn(id)?.toggleVisibility(checked)
+  columnVisibility.value = {
+    ...columnVisibility.value,
+    [id]: checked,
+  }
 }
 </script>
 

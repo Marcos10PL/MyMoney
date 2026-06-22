@@ -23,7 +23,8 @@ export const createAccountBodySchema = z
       VALIDATION.ACCOUNT_DESCRIPTION_MAX_LENGTH
     )
       .optional()
-      .or(z.literal('')),
+      .or(z.literal(''))
+      .transform((val) => (val === '' ? null : val)),
 
     type: z.enum(ACCOUNT_TYPES).default(ACCOUNT_TYPES.CHECKING!),
 
@@ -40,10 +41,13 @@ export const createAccountBodySchema = z
     conditions: textFieldSchema(
       VALIDATION.ACCOUNT_CONDITIONS_MIN_LENGTH,
       VALIDATION.ACCOUNT_CONDITIONS_MAX_LENGTH
-    ).optional(),
+    )
+      .optional()
+      .or(z.literal(''))
+      .transform((val) => (val === '' ? null : val)),
 
     duration: z.enum(ACCOUNT_DURATION).default(ACCOUNT_DURATION.INDEFINITE!),
-    durationEndDate: z.iso.datetime().optional(),
+    durationEndDate: z.iso.datetime().optional().nullable(),
 
     startDate: z.iso.datetime(),
   })
@@ -55,6 +59,12 @@ export const createAccountBodySchema = z
         path: ['durationEndDate'],
       })
     }
+  })
+  .transform((data) => {
+    if (data.duration === ACCOUNT_DURATION.INDEFINITE) {
+      data.durationEndDate = null
+    }
+    return data
   })
 
 export const updateAccountBodySchema = createAccountBodySchema
@@ -70,13 +80,21 @@ export const updateBankBodySchema = createBankBodySchema
 
 export const createTransactionBodySchema = z
   .object({
+    name: textFieldSchema(
+      VALIDATION.TRANSACTION_NAME_MIN_LENGTH,
+      VALIDATION.TRANSACTION_NAME_MAX_LENGTH
+    ),
     accountId: idFieldSchema,
-    categoryId: idFieldSchema.optional(),
-    toAccountId: idFieldSchema.optional(),
+    categoryId: idFieldSchema.optional().nullable(),
+    toAccountId: idFieldSchema.optional().nullable(),
     counterparty: textFieldSchema(
       VALIDATION.TRANSACTION_COUNTERPARTY_MIN_LENGTH,
       VALIDATION.TRANSACTION_COUNTERPARTY_MAX_LENGTH
-    ).optional(),
+    )
+      .optional()
+      .or(z.literal(''))
+      .transform((val) => (val === '' ? null : val)),
+
     type: z.enum(TRANSACTION_TYPES),
     amount: z
       .number()
@@ -86,7 +104,10 @@ export const createTransactionBodySchema = z
     description: textFieldSchema(
       VALIDATION.TRANSACTION_DESCRIPTION_MIN_LENGTH,
       VALIDATION.TRANSACTION_DESCRIPTION_MAX_LENGTH
-    ).optional(),
+    )
+      .optional()
+      .or(z.literal(''))
+      .transform((val) => (val === '' ? null : val)),
     date: z.iso.datetime(),
   })
   .superRefine((data, ctx) => {
@@ -120,8 +141,29 @@ export const createTransactionBodySchema = z
       })
     }
   })
+  .transform((data) => {
+    if (
+      data.type !== TRANSACTION_TYPES.EXPENSE &&
+      data.type !== TRANSACTION_TYPES.INCOME
+    ) {
+      data.categoryId = null
+    }
 
-export const updateTransactionBodySchema = createTransactionBodySchema
+    if (data.type !== TRANSACTION_TYPES.TRANSFER) data.toAccountId = null
+
+    return data
+  })
+
+export const updateTransactionBodySchema =
+  createTransactionBodySchema.superRefine((data, ctx) => {
+    if (data.type === TRANSACTION_TYPES.TRANSFER) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Updating transaction type to transfer is not allowed',
+        path: ['type'],
+      })
+    }
+  })
 
 export const createCategoryBodySchema = z.object({
   parentId: idFieldSchema.optional(),

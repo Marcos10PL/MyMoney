@@ -24,6 +24,8 @@ export const transactions = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
 
+    name: text('name').notNull(),
+
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id),

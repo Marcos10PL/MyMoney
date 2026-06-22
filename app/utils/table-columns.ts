@@ -170,13 +170,15 @@ export const createColumns = <T extends Record<string, unknown>>(
 
           const value: VNode | string | null = opts.isDate
             ? formatDate(raw as string | null, { withTime: opts.withTime })
-            : opts.isCurrency
-              ? formatCurrency(raw != null ? Number(raw) : null)
-              : opts.isBoolean
-                ? raw
-                  ? 'Tak'
-                  : 'Nie'
-                : (raw ?? '--').toString()
+            : opts.isPercentage
+              ? `${formatNumber(Number(raw))}%`
+              : opts.isCurrency
+                ? formatCurrency(raw != null ? Number(raw) : null)
+                : opts.isBoolean
+                  ? raw
+                    ? 'Tak'
+                    : 'Nie'
+                  : (raw ?? '--').toString()
 
           return h('span', {}, value || '--')
         },
@@ -202,6 +204,7 @@ type ColumnOptions<T> = {
     { isCurrency: true },
     { isBoolean: true },
     { isPopover: true },
+    { isPercentage: true },
     object,
   ]
 >

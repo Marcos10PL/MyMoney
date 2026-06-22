@@ -15,6 +15,13 @@
       "when": 1781979362398,
       "tag": "0001_milky_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782135699090,
+      "tag": "0002_luxuriant_eternity",
+      "breakpoints": true
     }
   ]
 }
