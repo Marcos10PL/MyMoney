@@ -20,6 +20,7 @@ const setDefaults = (): Partial<Schema> => ({
   name: row?.name ?? '',
   accountId: row?.account?.id ?? undefined,
   categoryId: row?.category?.id ?? undefined,
+  transactionId: row?.transaction?.id ?? undefined,
 
   toAccountId: row?.toAccount?.id ?? undefined,
   counterparty: row?.counterparty ?? '',
@@ -160,7 +161,27 @@ const mapTransactionTypeToCategoryType = (
             v-model="state.type"
             class="w-full"
             :disabled="isTransferAndEdit"
-            :exclude="isEdit ? [TRANSACTION_TYPES.TRANSFER] : undefined"
+            :exclude="
+              isEdit && !isTransferAndEdit
+                ? [TRANSACTION_TYPES.TRANSFER]
+                : undefined
+            "
+          />
+        </UFormField>
+
+        <UFormField
+          v-if="state.type === TRANSACTION_TYPES.LOAN_RETURNED"
+          name="transactionId"
+          label="Pożyczka"
+          required
+        >
+          <SelectsLoanGivenTransactions
+            v-model="state.transactionId"
+            class="w-full"
+            clearable
+            @select="
+              (counterparty) => (state.counterparty = counterparty ?? '')
+            "
           />
         </UFormField>
 
@@ -179,7 +200,8 @@ const mapTransactionTypeToCategoryType = (
 
         <UiInput
           v-if="
-            state.type === TRANSACTION_TYPES.LOAN_RECEIVED ||
+            (state.transactionId &&
+              state.type === TRANSACTION_TYPES.LOAN_RETURNED) ||
             state.type === TRANSACTION_TYPES.LOAN_GIVEN
           "
           v-model="state.counterparty"
@@ -187,11 +209,12 @@ const mapTransactionTypeToCategoryType = (
           label="Kontrahent"
           placeholder="Nazwa kontrahenta"
           :required="true"
+          :disabled="state.type === TRANSACTION_TYPES.LOAN_RETURNED"
         />
 
         <UFormField
           v-if="
-            state.type === TRANSACTION_TYPES.TRANSFER ||
+            (state.type === TRANSACTION_TYPES.TRANSFER && !isEdit) ||
             (isTransferAndEdit && row?.toAccount?.id)
           "
           name="toAccountId"

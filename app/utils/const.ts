@@ -33,7 +33,7 @@ export const TRANSACTION_TYPES_LABELS = {
   income: 'Przychód',
   expense: 'Wydatek',
   loan_given: 'Pożyczka udzielona',
-  loan_received: 'Pożyczka otrzymana',
+  loan_returned: 'Pożyczka zwrócona',
   transfer: 'Przelew własny',
 } as const satisfies Record<AppTransactionType, string>
 
@@ -41,6 +41,16 @@ export const TRANSACTION_TYPES_COLORS = {
   income: 'success',
   expense: 'error',
   loan_given: 'info',
-  loan_received: 'secondary',
+  loan_returned: 'secondary',
   transfer: 'neutral',
 } as const satisfies Record<AppTransactionType, string>
+
+export const ACCOUNT_TYPE_ICONS = {
+  checking: 'i-heroicons-building-library',
+  savings: 'i-heroicons-banknotes',
+  deposit: 'i-heroicons-lock-closed',
+  investment: 'i-heroicons-chart-bar-square',
+  wallet: 'i-heroicons-wallet',
+  home: 'i-heroicons-home',
+  other: 'i-heroicons-ellipsis-horizontal-circle',
+} as const satisfies Record<Account['type'], string>

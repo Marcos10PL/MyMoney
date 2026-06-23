@@ -9,11 +9,12 @@ export type Account = Omit<
 
 export type Transaction = Omit<
   AppTransaction,
-  'userId' | 'accountId' | 'categoryId' | 'toAccountId'
+  'userId' | 'accountId' | 'categoryId' | 'toAccountId' | 'transactionId'
 > & {
   account: Pick<AppAccount, 'id' | 'name'>
   category: Pick<AppCategory, 'id' | 'name'> | null
   toAccount: Pick<AppAccount, 'id' | 'name'> | null
+  transaction: Pick<AppTransaction, 'id' | 'name'> | null
 }
 
 export type Category = Omit<

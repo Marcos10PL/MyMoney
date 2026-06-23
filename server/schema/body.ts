@@ -87,6 +87,7 @@ export const createTransactionBodySchema = z
     accountId: idFieldSchema,
     categoryId: idFieldSchema.optional().nullable(),
     toAccountId: idFieldSchema.optional().nullable(),
+    transactionId: idFieldSchema.optional().nullable(),
     counterparty: textFieldSchema(
       VALIDATION.TRANSACTION_COUNTERPARTY_MIN_LENGTH,
       VALIDATION.TRANSACTION_COUNTERPARTY_MAX_LENGTH
@@ -131,13 +132,20 @@ export const createTransactionBodySchema = z
     }
     if (
       (data.type === TRANSACTION_TYPES.LOAN_GIVEN ||
-        data.type === TRANSACTION_TYPES.LOAN_RECEIVED) &&
+        data.type === TRANSACTION_TYPES.LOAN_RETURNED) &&
       !data.counterparty
     ) {
       ctx.addIssue({
         code: 'custom',
         message: 'Counterparty is required for loans',
         path: ['counterparty'],
+      })
+    }
+    if (data.type === TRANSACTION_TYPES.LOAN_RETURNED && !data.transactionId) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Transaction ID is required for loan returns',
+        path: ['transactionId'],
       })
     }
   })

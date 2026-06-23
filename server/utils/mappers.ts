@@ -41,23 +41,46 @@ export const mapBankToDTO = (bank: AppBank): Bank => {
 }
 
 export const mapTransactionToDTO = (
-  transaction: AppTransaction,
-  account: Pick<AppAccount, 'id' | 'name'>,
-  category: Pick<AppCategory, 'id' | 'name'> | null,
-  toAccount: Pick<AppAccount, 'id' | 'name'> | null
+  tx: AppTransaction,
+  account: AppAccount,
+  category: AppCategory | null,
+  toAccount: AppAccount | null,
+  transaction: AppTransaction | null
 ): Transaction => {
   return {
-    id: transaction.id,
-    type: transaction.type,
-    amount: transaction.amount,
-    description: transaction.description,
-    name: transaction.name,
-    counterparty: transaction.counterparty,
-    account,
-    category,
-    toAccount,
-    date: new Date(transaction.date),
-    updatedAt: new Date(transaction.updatedAt),
-    createdAt: new Date(transaction.createdAt),
+    id: tx.id,
+    type: tx.type,
+    amount: tx.amount,
+    description: tx.description,
+    name: tx.name,
+    counterparty: tx.counterparty,
+
+    date: new Date(tx.date),
+    updatedAt: new Date(tx.updatedAt),
+    createdAt: new Date(tx.createdAt),
+
+    account: {
+      id: account.id,
+      name: account.name,
+    },
+
+    category: category
+      ? {
+          id: category.id,
+          name: category.name,
+        }
+      : null,
+    toAccount: toAccount
+      ? {
+          id: toAccount.id,
+          name: toAccount.name,
+        }
+      : null,
+    transaction: transaction
+      ? {
+          id: transaction.id,
+          name: transaction.name,
+        }
+      : null,
   }
 }

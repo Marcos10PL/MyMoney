@@ -90,6 +90,7 @@ export const transactionSchema = z
     accountId: idFieldSchema,
     categoryId: idFieldSchema.optional(),
     toAccountId: idFieldSchema.optional(),
+    transactionId: idFieldSchema.optional(),
     counterparty: textFieldSchema(
       VALIDATION.TRANSACTION_COUNTERPARTY_MIN_LENGTH,
       VALIDATION.TRANSACTION_COUNTERPARTY_MAX_LENGTH
@@ -126,21 +127,29 @@ export const transactionSchema = z
     ) {
       ctx.addIssue({
         code: 'custom',
-        message:
-          'Konto docelowe musi być inne niż konto źródłowe',
+        message: 'Konto docelowe musi być inne niż konto źródłowe',
         path: ['toAccountId'],
       })
     }
 
     if (
       (data.type === TRANSACTION_TYPES.LOAN_GIVEN ||
-        data.type === TRANSACTION_TYPES.LOAN_RECEIVED) &&
+        data.type === TRANSACTION_TYPES.LOAN_RETURNED) &&
       !data.counterparty
     ) {
       ctx.addIssue({
         code: 'custom',
         message: 'Kontrahent jest wymagany dla pożyczek',
         path: ['counterparty'],
+      })
+    }
+
+    if (data.type === TRANSACTION_TYPES.LOAN_RETURNED && !data.transactionId) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'Wskazanie transakcji "Pożyczka udzielona" jest wymagane dla zwrotu pożyczki',
+        path: ['transactionId'],
       })
     }
   })

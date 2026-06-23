@@ -61,7 +61,7 @@ const columns = createColumns<Account>(
       mapValue: (_value, row) => ACCOUNT_TYPES_LABELS[row.type],
     },
     bank: {
-      mapValue: (_value, row) => row.bank?.name ?? '',
+      mapValue: (_value, row) => row.bank?.name ?? '--',
     },
     startDate: { isDate: true, isSortable: true },
     durationEndDate: { isDate: true, isSortable: true },
@@ -190,7 +190,7 @@ const columnVisibility = useLocalStorage('table-columns-orders', {})
       />
       <template #fallback>
         <USkeleton
-          v-for="i in 5"
+          v-for="i in 15"
           :key="i"
           class="h-12 w-full rounded-md my-2"
         />

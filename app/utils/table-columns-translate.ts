@@ -18,6 +18,8 @@ const translations: Record<string, string> = {
   account: 'Konto',
   category: 'Kategoria',
   toAccount: 'Konto docelowe',
+  createdAt: 'Systemowa data utworzenia',
+  updatedAt: 'Systemowa data aktualizacji',
 }
 
 export const tableColumnsTranslate = (columnName: string) =>

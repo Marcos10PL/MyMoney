@@ -1,3 +1,4 @@
+import { and, eq } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
 import { transactions } from '~~/server/db/schema'
 import { createTransactionBodySchema } from '~~/server/schema/body'
@@ -7,6 +8,27 @@ export default defineEventHandler(async (event) => {
   const body = await readValidatedBody(event, createTransactionBodySchema.parse)
 
   await db.transaction(async (tx) => {
+    if (body.type === TRANSACTION_TYPES.LOAN_RETURNED) {
+      const originalTransaction = await tx
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.id, body.transactionId!),
+            eq(transactions.userId, user.id),
+            eq(transactions.type, TRANSACTION_TYPES.LOAN_GIVEN)
+          )
+        )
+        .limit(1)
+
+      if (!originalTransaction) {
+        throw createError({
+          statusCode: 400,
+          message: 'Original transaction not found for loan return',
+        })
+      }
+    }
+
     await tx.insert(transactions).values({
       userId: user.id,
       name: body.name,
@@ -18,6 +40,10 @@ export default defineEventHandler(async (event) => {
       amount: String(body.amount),
       description: body.description ?? null,
       date: new Date(body.date),
+      transactionId:
+        body.type === TRANSACTION_TYPES.LOAN_RETURNED
+          ? body.transactionId
+          : null,
     })
 
     if (body.toAccountId) {
@@ -32,6 +58,7 @@ export default defineEventHandler(async (event) => {
         amount: String(body.amount),
         description: null,
         date: new Date(body.date),
+        transactionId: null,
       })
     }
   })

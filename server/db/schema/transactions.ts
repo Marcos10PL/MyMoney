@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   index,
   numeric,
   pgEnum,
@@ -16,7 +17,7 @@ export const transactionTypeEnum = pgEnum('transaction_type', [
   'expense',
   'transfer',
   'loan_given',
-  'loan_received',
+  'loan_returned',
 ])
 
 export const transactions = pgTable(
@@ -41,7 +42,15 @@ export const transactions = pgTable(
       onDelete: 'set null',
     }),
 
-    // for loan_given / loan_received
+    // for loan_returned
+    transactionId: uuid('transaction_id').references(
+      (): AnyPgColumn => transactions.id,
+      {
+        onDelete: 'set null',
+      }
+    ),
+
+    // for loan_given / loan_returned
     counterparty: text('counterparty'),
 
     type: transactionTypeEnum('type').notNull(),

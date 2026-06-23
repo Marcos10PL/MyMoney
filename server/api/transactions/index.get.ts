@@ -16,6 +16,7 @@ import { accounts, categories, transactions } from '~~/server/db/schema'
 import { transactionsQuerySchema } from '~~/server/schema/query'
 
 const toAccounts = alias(accounts, 'to_accounts')
+const tx = alias(transactions, 'tx')
 
 export default defineEventHandler(async (event) => {
   const { user } = getEventContext(event)
@@ -69,6 +70,7 @@ export default defineEventHandler(async (event) => {
       .innerJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(categories, eq(transactions.categoryId, categories.id))
       .leftJoin(toAccounts, eq(transactions.toAccountId, toAccounts.id))
+      .leftJoin(tx, eq(transactions.transactionId, tx.id))
       .where(and(...conditions))
       .limit(limit)
       .offset((page - 1) * limit)
@@ -80,8 +82,8 @@ export default defineEventHandler(async (event) => {
   return {
     success: true,
     message: 'Transactions fetched successfully',
-    data: items.map(({ transactions, accounts, categories, to_accounts }) =>
-      mapTransactionToDTO(transactions, accounts, categories, to_accounts)
+    data: items.map(({ transactions, accounts, categories, to_accounts, tx }) =>
+      mapTransactionToDTO(transactions, accounts, categories, to_accounts, tx)
     ),
     pagination: {
       page,

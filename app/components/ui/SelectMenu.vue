@@ -34,12 +34,15 @@ const selectedItem = computed({
     }
   },
 })
+
+const searchInput = defineModel<string>('searchTerm', { default: '' })
 </script>
 
 <template>
   <USelectMenu
     v-model:open="isOpen"
     v-model="selectedItem"
+    v-model:search-term="searchInput"
     :items
     :disabled
     :multiple
