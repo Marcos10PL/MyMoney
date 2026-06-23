@@ -2,7 +2,7 @@ export const formatNumber = (
   value?: number | null,
   options?: { fractionDigits?: number }
 ) => {
-  if (value == null) return '--'
+  if (!value) return '--'
 
   const { fractionDigits } = options || {}
 

@@ -162,6 +162,7 @@ const onSubmit = async (
           <UiInputDate
             v-model="durationEndDateModel"
             :range="false"
+            :with-max="false"
             class="w-full"
           />
         </UFormField>

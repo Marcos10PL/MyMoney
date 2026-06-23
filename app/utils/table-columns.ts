@@ -170,7 +170,7 @@ export const createColumns = <T extends Record<string, unknown>>(
 
           const value: VNode | string | null = opts.isDate
             ? formatDate(raw as string | null, { withTime: opts.withTime })
-            : opts.isPercentage
+            : opts.isPercentage && raw != null
               ? `${formatNumber(Number(raw))}%`
               : opts.isCurrency
                 ? formatCurrency(raw != null ? Number(raw) : null)

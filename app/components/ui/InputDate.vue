@@ -5,8 +5,9 @@ import {
   today,
 } from '@internationalized/date'
 
-const { range = true } = defineProps<{
+const { range = true, withMax = true } = defineProps<{
   range?: boolean
+  withMax?: boolean
 }>()
 
 const tz = getLocalTimeZone()
@@ -61,7 +62,7 @@ const label = computed(() => {
         v-model="model"
         class="p-2"
         :number-of-months="range ? 2 : 1"
-        :max-value
+        :max-value="withMax ? maxValue : undefined"
         :default-placeholder="range ? defaultPlaceholder : maxValue"
         :range
         locale="pl-PL"
