@@ -1,9 +1,7 @@
 <script lang="ts" setup>
-const { data, pending: x } = useLazyFetch('/api/stats', {
+const { data, pending } = useLazyFetch('/api/stats', {
   transform: (res) => res.data,
 })
-
-const pending = computed(() => x.value)
 
 const initialTotals = { balance: 0, income: 0, expense: 0, owed: 0 }
 
