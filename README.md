@@ -1,4 +1,4 @@
-# MyMoney
+# MyMoney v1
 
 A personal finance management application for tracking bank accounts, transactions, expense categories, loans, and financial analytics. Built as a personal project tailored to my own needs.
 
