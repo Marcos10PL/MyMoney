@@ -17,7 +17,7 @@ export const categoryStats = (
     .map(([key, total]) => ({
       categoryId: key === NONE_KEY ? null : key,
       name:
-        key === NONE_KEY ? 'Bez kategorii' : (categoriesMap[key] ?? 'Nieznana'),
+        key === NONE_KEY ? 'Bez kategorii (nie liczone globalnie)' : (categoriesMap[key] ?? 'Nieznana'),
       total,
       percent: totalCount > 0 ? Math.round((total / totalCount) * 100) : 0,
     }))

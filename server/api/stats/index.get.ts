@@ -71,16 +71,16 @@ export default defineEventHandler(async (event) => {
     if (!stats) throw new Error(`Account stats not found: ${tx.accountId}`)
 
     if (tx.type === TRANSACTION_TYPES.INCOME) {
-      stats.incomeSum += amount
       stats.balance += amount
+      if (tx.categoryId) stats.incomeSum += amount
       const catKey = tx.categoryId ?? NONE_KEY
       incomeByCategoryMap.set(
         catKey,
         (incomeByCategoryMap.get(catKey) ?? 0) + amount
       )
     } else if (tx.type === TRANSACTION_TYPES.EXPENSE) {
-      stats.expenseSum += amount
       stats.balance -= amount
+      if (tx.categoryId) stats.expenseSum += amount
       const catKey = tx.categoryId ?? NONE_KEY
       expenseByCategoryMap.set(
         catKey,

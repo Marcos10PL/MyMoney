@@ -11,7 +11,7 @@ onMounted(() => store.fetchAccounts())
 const items = computed(() => {
   return store.accounts.map((account) => ({
     value: account.id,
-    label: account.name,
+    label: `${account.name} ${account.bank ? `(${account.bank.name})` : ''}`,
   }))
 })
 

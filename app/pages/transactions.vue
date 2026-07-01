@@ -29,7 +29,10 @@ const sorting = ref<SortingState>([{ id: DEFAULT_SORT_COL, desc: true }])
 const sortBy = computed(() => sorting.value[0]?.id)
 const sortOrder = computed(() => (sorting.value[0]?.desc ? 'desc' : 'asc'))
 
-watch([filters, sorting], () => {
+const search = ref('')
+const debouncedSearch = useDebounce(search)
+
+watch([filters, sorting, debouncedSearch], () => {
   page.value = 1
 })
 
@@ -39,6 +42,7 @@ const { data, pending, error, refresh } = useLazyFetch('/api/transactions', {
     page,
     sortBy,
     sortOrder,
+    search: debouncedSearch,
     ...toRefs(filters),
   },
 })
@@ -47,8 +51,6 @@ const modalOpen = ref(false)
 const deleteModalOpen = ref(false)
 const deleteLoading = ref(false)
 const transactionValue = ref<Transaction | null>(null)
-
-const search = ref('')
 
 const columns = createColumns<Transaction>(
   [
@@ -147,10 +149,6 @@ watch(error, (err) => {
 
 const table = useTemplateRef('table')
 const columnVisibility = useLocalStorage('table-columns-transactions', {})
-
-watch(filters, (newFilters) => {
-  console.log('Filters changed:', newFilters)
-})
 </script>
 
 <template>
