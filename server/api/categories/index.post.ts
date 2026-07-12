@@ -10,7 +10,13 @@ export default defineEventHandler(async (event) => {
   const [existingCategory] = await db
     .select()
     .from(categories)
-    .where(and(eq(categories.userId, user.id), eq(categories.name, body.name)))
+    .where(
+      and(
+        eq(categories.userId, user.id),
+        eq(categories.name, body.name),
+        eq(categories.type, body.type)
+      )
+    )
 
   if (existingCategory)
     throw createError({

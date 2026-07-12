@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core'
 import { users } from './users'
@@ -23,7 +24,7 @@ export const categories = pgTable(
     // for future
     parentId: uuid('parent_id').references((): AnyPgColumn => categories.id),
 
-    name: text('name').notNull().unique(),
+    name: text('name').notNull(),
     type: categoryTypeEnum('type').notNull(),
 
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -38,5 +39,6 @@ export const categories = pgTable(
     index('categories_user_id_idx').on(t.userId),
     index('categories_parent_id_idx').on(t.parentId),
     index('categories_type_idx').on(t.type),
+    unique('categories_user_id_name_type_unique').on(t.userId, t.name, t.type),
   ]
 )

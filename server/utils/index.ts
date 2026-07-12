@@ -12,8 +12,9 @@ export const categoryStats = (
   totalCount: number
 ) => {
   return [...map.entries()]
+    .filter(([key]) => key !== NONE_KEY)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
+    .slice(0, 10)
     .map(([key, total]) => ({
       categoryId: key === NONE_KEY ? null : key,
       name:

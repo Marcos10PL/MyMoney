@@ -22,7 +22,10 @@ export const formatCurrency = (
 ) => {
   const { currency = 'PLN', fractionDigits, includeZero } = options || {}
 
-  if (amount == null || (!amount && !includeZero)) return '--'
+  if (amount == null) return '--'
+
+  const normalized = Math.round(amount * 100) / 100 || 0
+  if (!normalized && !includeZero) return '--'
 
   return new Intl.NumberFormat('pl-PL', {
     style: 'currency',
@@ -31,7 +34,7 @@ export const formatCurrency = (
       minimumFractionDigits: 2,
       maximumFractionDigits: fractionDigits,
     }),
-  }).format(amount)
+  }).format(normalized)
 }
 
 export const formatDate = (

@@ -107,14 +107,14 @@ const accountsWithPercents = computed(() =>
     <!-- Top expense categories -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <StatsTopCategories
-        :label="'Top 5 kategorii wydatków'"
+        :label="'Top 10 kategorii wydatków'"
         :categories="data?.topExpenseCategories ?? []"
         :loading="pending"
         type="expense"
       />
 
       <StatsTopCategories
-        :label="'Top 5 kategorii przychodów'"
+        :label="'Top 10 kategorii przychodów'"
         :categories="data?.topIncomeCategories ?? []"
         :loading="pending"
         type="income"

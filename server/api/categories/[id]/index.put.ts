@@ -16,6 +16,7 @@ export default defineEventHandler(async (event) => {
       and(
         eq(categories.userId, user.id),
         eq(categories.name, body.name),
+        eq(categories.type, body.type),
         ne(categories.id, id)
       )
     )

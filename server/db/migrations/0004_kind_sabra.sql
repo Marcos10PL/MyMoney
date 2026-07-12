@@ -1,0 +1,2 @@
+ALTER TABLE "categories" DROP CONSTRAINT "categories_name_unique";--> statement-breakpoint
+ALTER TABLE "categories" ADD CONSTRAINT "categories_user_id_name_type_unique" UNIQUE("user_id","name","type");
