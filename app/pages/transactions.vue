@@ -197,6 +197,30 @@ const columnVisibility = useLocalStorage('table-columns-transactions', {})
       <UiDatePerset v-model="dateFilter" />
     </div>
 
+    <div class="flex gap-2 my-4 flex-wrap">
+      <UBadge color="success" variant="soft" size="lg">
+        Przychody:
+        <UiAmount
+          :value="data?.sums?.incomeSum"
+          :options="{ includeZero: true }"
+        />
+      </UBadge>
+      <UBadge color="error" variant="soft" size="lg">
+        Wydatki:
+        <UiAmount
+          :value="data?.sums?.expenseSum"
+          :options="{ includeZero: true }"
+        />
+      </UBadge>
+      <UBadge color="neutral" variant="soft" size="lg">
+        Saldo:
+        <UiAmount
+          :value="(data?.sums?.incomeSum ?? 0) - (data?.sums?.expenseSum ?? 0)"
+          :options="{ includeZero: true }"
+        />
+      </UBadge>
+    </div>
+
     <ClientOnly>
       <UTable
         ref="table"

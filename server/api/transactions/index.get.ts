@@ -10,6 +10,8 @@ import {
   ilike,
   inArray,
   lte,
+  sql,
+  sum,
 } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
 import { accounts, categories, transactions } from '~~/server/db/schema'
@@ -59,9 +61,20 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const [countResult, items] = await Promise.all([
+  const [countResult, sumsResult, items] = await Promise.all([
     db
       .select({ total: count() })
+      .from(transactions)
+      .where(and(...conditions)),
+    db
+      .select({
+        incomeSum: sum(
+          sql`CASE WHEN ${transactions.type} = 'income' AND ${transactions.categoryId} IS NOT NULL THEN ${transactions.amount}::numeric ELSE 0 END`
+        ),
+        expenseSum: sum(
+          sql`CASE WHEN ${transactions.type} = 'expense' AND ${transactions.categoryId} IS NOT NULL THEN ${transactions.amount}::numeric ELSE 0 END`
+        ),
+      })
       .from(transactions)
       .where(and(...conditions)),
     db
@@ -78,6 +91,8 @@ export default defineEventHandler(async (event) => {
   ])
 
   const total = countResult[0]?.total ?? 0
+  const incomeSum = parseFloat(sumsResult[0]?.incomeSum ?? '0') || 0
+  const expenseSum = parseFloat(sumsResult[0]?.expenseSum ?? '0') || 0
 
   return {
     success: true,
@@ -91,5 +106,6 @@ export default defineEventHandler(async (event) => {
       total,
       totalPages: Math.ceil(total / limit),
     },
-  } satisfies APIResponse<Transaction[]>
+    sums: { incomeSum, expenseSum },
+  }
 })

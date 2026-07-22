@@ -9,13 +9,13 @@ defineProps<{
 <template>
   <div class="flex items-end gap-1 shrink-0 *:font-mono *:font-semibold p-1">
     <UBadge v-if="incomeSum > 0" color="success" variant="soft">
-      {{ formatCurrency(incomeSum) }}
+      <UiAmount :value="incomeSum" />
     </UBadge>
     <UBadge v-if="expenseSum > 0" color="error" variant="soft">
-      {{ formatCurrency(expenseSum) }}
+      <UiAmount :value="expenseSum" />
     </UBadge>
     <UBadge color="neutral" variant="soft">
-      {{ formatCurrency(balance, { includeZero: true }) }}
+      <UiAmount :value="balance" :options="{ includeZero: true }" />
     </UBadge>
   </div>
 </template>

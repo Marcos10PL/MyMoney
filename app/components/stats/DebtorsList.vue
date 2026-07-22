@@ -39,7 +39,7 @@ const initials = (name: string) =>
           {{ debtor.counterparty }}
         </p>
         <p class="text-sm font-mono font-semibold text-warning shrink-0">
-          {{ formatCurrency(debtor.amountToPay) }}
+          <UiAmount :value="debtor.amountToPay" />
         </p>
       </div>
     </div>
@@ -50,7 +50,7 @@ const initials = (name: string) =>
           Łącznie do odzyskania
         </span>
         <span class="font-mono font-bold text-warning text-sm">
-          {{ formatCurrency(totalOwed) }}
+          <UiAmount :value="totalOwed" />
         </span>
       </div>
     </template>

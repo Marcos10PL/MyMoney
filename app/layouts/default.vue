@@ -26,6 +26,7 @@ watch(
           @click="open = !open"
         />
         <div class="flex items-center gap-2">
+          <AmountVisibilityButton />
           <UColorModeButton />
           <LogoutButton />
         </div>

@@ -48,7 +48,7 @@ const c = computed(() => classes[color])
           v-else
           :class="`text-lg md:text-2xl font-bold overflow-x-auto font-mono ${c.text}`"
         >
-          {{ formatCurrency(amount) }}
+          <UiAmount :value="amount" />
         </p>
       </div>
       <div

@@ -29,14 +29,14 @@ defineProps<{
           v-else
           class="text-xl md:text-3xl font-semibold overflow-x-auto font-mono"
         >
-          {{ formatCurrency(balance) }}
+          <UiAmount :value="balance" />
         </p>
         <div
           v-if="owed > 0"
           class="flex items-center justify-between border-t border-default pt-1 text-xs mt-1.5 text-shadow-xs text-shadow-warning overflow-x-auto max-w-fit gap-2"
         >
           <span class="font-bold font-mono">
-            {{ formatCurrency(balance + owed) }}
+            <UiAmount :value="balance + owed" />
           </span>
           <UiInfoPopover
             description="Saldo po odzyskaniu pożyczek"

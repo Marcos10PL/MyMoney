@@ -44,7 +44,7 @@ const isIncome = computed(() => type === 'income')
         <div class="flex items-center justify-between mb-1 gap-2">
           <span class="text-sm font-medium truncate">{{ cat.name }}</span>
           <span class="text-sm font-semibold font-mono shrink-0">
-            {{ formatCurrency(cat.total) }}
+            <UiAmount :value="cat.total" />
           </span>
         </div>
         <UProgress

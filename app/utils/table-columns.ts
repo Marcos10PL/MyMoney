@@ -2,7 +2,7 @@ import { h } from 'vue'
 import type { TableColumn, ButtonProps } from '@nuxt/ui'
 import type { Column } from '@tanstack/vue-table'
 import type { VNode } from 'vue'
-import { UButton, UIcon, UTooltip, UiNotesCell } from '#components'
+import { UButton, UIcon, UTooltip, UiNotesCell, UiAmount } from '#components'
 import { tableColumnsTranslate } from './table-columns-translate'
 
 // ---- EXPAND COLUMN ----
@@ -173,7 +173,7 @@ export const createColumns = <T extends Record<string, unknown>>(
             : opts.isPercentage && raw != null
               ? `${formatNumber(Number(raw))}%`
               : opts.isCurrency
-                ? formatCurrency(raw != null ? Number(raw) : null)
+                ? h(UiAmount, { value: raw != null ? Number(raw) : null })
                 : opts.isBoolean
                   ? raw
                     ? 'Tak'
