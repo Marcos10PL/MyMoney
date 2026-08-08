@@ -15,3 +15,8 @@ export const idFieldSchema = z.uuid()
 
 export const textFieldSchema = (min: number, max: number) =>
   z.string().trim().min(min).max(max)
+
+export const decimalFieldSchema = (min = 0, max?: number) =>
+  (max != null ? z.number().min(min).max(max) : z.number().min(min)).refine(
+    (v) => Math.round(v * 100) === v * 100
+  )

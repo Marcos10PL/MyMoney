@@ -11,7 +11,8 @@ onMounted(() => store.fetchAccounts())
 const items = computed(() => {
   return store.accounts.map((account) => ({
     value: account.id,
-    label: `${account.name} ${account.bank ? `(${account.bank.name})` : ''}`,
+    label: `${account.name}${account.bank ? ` (${account.bank.name})` : ''}`,
+    balance: account.balance,
   }))
 })
 
@@ -36,5 +37,18 @@ const displayModel = computed({
     :loading="store.loading"
     :clearable
     :multiple
-  />
+  >
+    <template #item="{ item }">
+      <span class="flex-1 truncate">{{ item.label }}</span>
+      <span class="text-xs text-muted font-mono ml-2 shrink-0">
+        {{
+          (item.balance as number).toLocaleString('pl-PL', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        }}
+        PLN
+      </span>
+    </template>
+  </UiSelectMenu>
 </template>

@@ -15,6 +15,15 @@ export const loginFieldSchema = z
 
 export const idFieldSchema = z.uuid('Pole jest wymagane')
 
+const twoDecimals = (v: number) => Math.round(v * 100) === v * 100
+const TWO_DECIMALS_MSG = 'Maksymalnie 2 miejsca po przecinku'
+
+export const decimalFieldSchema = (min = 0, max?: number) =>
+  (max != null ? z.number().min(min).max(max) : z.number().min(min)).refine(
+    twoDecimals,
+    TWO_DECIMALS_MSG
+  )
+
 export const textFieldSchema = (min: number, max: number) =>
   z
     .string()

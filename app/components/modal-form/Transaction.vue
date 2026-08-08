@@ -145,6 +145,7 @@ const mapTransactionTypeToCategoryType = (
           name="amount"
           label="Kwota (PLN)"
           :disabled="isTransferAndEdit"
+          :format-options="{ maximumFractionDigits: 2 }"
         />
 
         <UiTextarea

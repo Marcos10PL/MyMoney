@@ -1,7 +1,50 @@
 import type { H3Event } from 'h3'
+import { eq } from 'drizzle-orm'
+import { db } from '~~/server/db/conn'
+import { transactions } from '~~/server/db/schema'
 
 export const getEventContext = (event: H3Event) => {
   return event.context.userSession
+}
+
+export const computeAccountBalances = async (
+  userId: string
+): Promise<Record<string, number>> => {
+  const txs = await db
+    .select({
+      accountId: transactions.accountId,
+      toAccountId: transactions.toAccountId,
+      type: transactions.type,
+      amount: transactions.amount,
+    })
+    .from(transactions)
+    .where(eq(transactions.userId, userId))
+
+  const balances: Record<string, number> = {}
+
+  for (const tx of txs) {
+    const amount = parseFloat(tx.amount) || 0
+    const acc = tx.accountId
+    if (!balances[acc]) balances[acc] = 0
+
+    if (tx.type === TRANSACTION_TYPES.INCOME) {
+      balances[acc] += amount
+    } else if (tx.type === TRANSACTION_TYPES.EXPENSE) {
+      balances[acc] -= amount
+    } else if (tx.type === TRANSACTION_TYPES.LOAN_GIVEN) {
+      balances[acc] -= amount
+    } else if (tx.type === TRANSACTION_TYPES.LOAN_RETURNED) {
+      balances[acc] += amount
+    } else if (tx.type === TRANSACTION_TYPES.TRANSFER) {
+      if (tx.toAccountId) {
+        balances[acc] -= amount
+      } else {
+        balances[acc] += amount
+      }
+    }
+  }
+
+  return balances
 }
 
 export const NONE_KEY = '__none__'
@@ -18,7 +61,9 @@ export const categoryStats = (
     .map(([key, total]) => ({
       categoryId: key === NONE_KEY ? null : key,
       name:
-        key === NONE_KEY ? 'Bez kategorii (nie liczone globalnie)' : (categoriesMap[key] ?? 'Nieznana'),
+        key === NONE_KEY
+          ? 'Bez kategorii (nie liczone globalnie)'
+          : (categoriesMap[key] ?? 'Nieznana'),
       total,
       percent: totalCount > 0 ? Math.round((total / totalCount) * 100) : 0,
     }))

@@ -139,6 +139,7 @@ const onSubmit = async (
             :step="0.01"
             :min="0"
             :max="100"
+            :format-options="{ maximumFractionDigits: 2 }"
           />
         </div>
 

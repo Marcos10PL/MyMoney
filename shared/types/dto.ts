@@ -5,6 +5,7 @@ export type Account = Omit<
   'userId' | 'bankId' | 'createdAt' | 'updatedAt'
 > & {
   bank: Bank | null
+  balance: number
 }
 
 export type Transaction = Omit<
@@ -21,3 +22,26 @@ export type Category = Omit<
   AppCategory,
   'userId' | 'createdAt' | 'updatedAt' | 'parentId'
 >
+
+export type Asset = Omit<AppAsset, 'userId'> & {
+  accounts: { id: string; name: string; bankName: string | null }[]
+  currentValue: number
+}
+
+export type PortfolioAssetEntry = {
+  id: string
+  asset: Pick<AppAsset, 'id' | 'name' | 'type'>
+  allocatedAmount: string | null
+  targetPercent: string | null
+  maxDeviation: string | null
+  // computed
+  effectiveValue: number
+  actualPercent: number
+  drift: number | null
+  isDrifting: boolean
+}
+
+export type Portfolio = Omit<AppPortfolio, 'userId'> & {
+  assets: PortfolioAssetEntry[]
+  totalValue: number
+}

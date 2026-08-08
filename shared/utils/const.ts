@@ -26,6 +26,14 @@ export const VALIDATION = {
 
   CATEGORY_NAME_MIN_LENGTH: 2,
   CATEGORY_NAME_MAX_LENGTH: 100,
+
+  ASSET_NAME_MIN: 2,
+  ASSET_NAME_MAX: 255,
+  ASSET_DESCRIPTION_MAX: 1000,
+
+  PORTFOLIO_NAME_MIN: 2,
+  PORTFOLIO_NAME_MAX: 255,
+  PORTFOLIO_DESCRIPTION_MAX: 1000,
 } as const
 
 export const USER_ROLES = {
@@ -59,3 +67,14 @@ export const CATEGORY_TYPES = {
   INCOME: 'income',
   EXPENSE: 'expense',
 } as const satisfies Record<string, AppCategoryType>
+
+export const ASSET_TYPES = {
+  BONDS: 'bonds',
+  ETF: 'etf',
+  STOCKS: 'stocks',
+  GOLD: 'gold',
+  REAL_ESTATE: 'real_estate',
+  CRYPTO: 'crypto',
+  CASH: 'cash',
+  OTHER: 'other',
+} as const satisfies Record<string, AppAssetType>

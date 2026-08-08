@@ -15,6 +15,11 @@ const items = ref<NavigationMenuItem[]>([
       icon: 'i-lucide-credit-card',
       href: LINKS.TRANSACTIONS,
     },
+    {
+      label: 'Inwestycje',
+      icon: 'i-lucide-trending-up',
+      href: LINKS.INVESTMENTS,
+    },
   ],
   [
     {
