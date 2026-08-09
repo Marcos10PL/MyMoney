@@ -169,16 +169,11 @@ export default defineEventHandler(async (event) => {
     linkedAccountsByAsset.set(link.assetId, list)
   }
 
+  // Only count assets with manually-set market values.
+  // Assets valued via linked accounts are already included in totalBalance.
   const totalInvestmentValue = userAssets.reduce((sum, asset) => {
     const manual = parseFloat(asset.value) || 0
-    if (manual > 0) return sum + manual
-    const linkedIds = linkedAccountsByAsset.get(asset.id) ?? []
-    if (linkedIds.length > 0) {
-      return (
-        sum + linkedIds.reduce((s, id) => s + (accountBalances[id] ?? 0), 0)
-      )
-    }
-    return sum
+    return manual > 0 ? sum + manual : sum
   }, 0)
 
   const accountStatsList = Object.values(accountStatsMap)
