@@ -10,13 +10,13 @@ const router = useRouter()
 const layout = inject(investmentsLayoutKey)
 
 const columnVisibility = computed({
-  get: () => layout?.columnVisibility.value ?? {},
+  get: () => layout?.columnVisibility?.value ?? {},
   set: (val) => {
-    if (layout) layout.columnVisibility.value = val
+    if (layout && layout.columnVisibility) layout.columnVisibility.value = val
   },
 })
-const activeTable = computed(() => layout?.table.value)
-const activeLoading = computed(() => layout?.loading.value ?? false)
+const activeTable = computed(() => layout?.table?.value)
+const activeLoading = computed(() => layout?.loading?.value ?? false)
 
 const activeTab = computed({
   get: () =>
@@ -45,7 +45,7 @@ const tabItems = [
       @create="layout?.openCreate()"
     />
 
-    <UTabs v-model="activeTab" :items="tabItems" class="mt-4" />
+    <UTabs v-model="activeTab" :items="tabItems" class="mt-4 md:max-w-lg" />
 
     <slot />
   </div>

@@ -53,7 +53,6 @@ const onPortfolioSuccess = () => {
   props.onRefresh()
 }
 
-// ---- CHART ----
 const chartModal = ref(false)
 const chartPortfolio = ref<Portfolio | null>(null)
 const openChart = (p: Portfolio) => {
@@ -68,13 +67,6 @@ const refreshAndSyncChart = async () => {
       props.portfolios.find((p) => p.id === chartPortfolio.value!.id) ?? null
   }
 }
-
-const portfolioSegments = (portfolio: Portfolio) =>
-  portfolio.assets.map((entry) => ({
-    label: entry.asset.name,
-    value: entry.effectiveValue,
-    color: ASSET_TYPE_COLORS[entry.asset.type],
-  }))
 
 // ---- PORTFOLIO ASSET modals ----
 const paModal = ref(false)
@@ -141,9 +133,25 @@ const portfolioEntriesWithColor = (portfolio: Portfolio): PARow[] =>
     _color: ASSET_TYPE_COLORS[entry.asset.type],
   }))
 
+const colorVal = (val: number, fmt: string) =>
+  h(
+    'span',
+    { class: val > 0 ? 'text-success' : val < 0 ? 'text-error' : '' },
+    fmt
+  )
+
 const makePortfolioAssetColumns = (portfolioId: string) => [
   ...createColumns<PARow>(
-    ['asset', 'effectiveValue', 'actualPercent', 'targetPercent', 'drift'],
+    [
+      'asset',
+      'effectiveValue',
+      'costBasis',
+      'gain',
+      'gainPercent',
+      'actualPercent',
+      'targetPercent',
+      'drift',
+    ],
     {
       asset: {
         mapValue: (_, row) =>
@@ -162,6 +170,23 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
           ]),
       },
       effectiveValue: { isCurrency: true },
+      costBasis: { isCurrency: true },
+      gain: {
+        mapValue: (_, row) =>
+          colorVal(
+            row.gain,
+            `${row.gain >= 0 ? '+' : ''}${formatCurrency(row.gain)}`
+          ),
+      },
+      gainPercent: {
+        mapValue: (_, row) =>
+          row.gainPercent !== null
+            ? colorVal(
+                row.gainPercent,
+                `${row.gainPercent >= 0 ? '+' : ''}${formatNumber(row.gainPercent)}%`
+              )
+            : h('span', { class: 'text-muted' }, '—'),
+      },
       actualPercent: {
         mapValue: (_, row) => `${row.actualPercent.toFixed(1)}%`,
       },
@@ -244,7 +269,16 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
                   @click="openAddPA(portfolio.id)"
                 />
               </UTooltip>
-              <UTooltip text="Wykres">
+              <UTooltip text="Szczegóły portfela">
+                <UButton
+                  icon="i-lucide-external-link"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  :to="`/investments/portfolios/${portfolio.id}`"
+                />
+              </UTooltip>
+              <UTooltip text="Wykres struktury">
                 <UButton
                   icon="i-lucide-pie-chart"
                   color="info"
@@ -274,16 +308,26 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
             </div>
           </div>
 
-          <UBadge
-            variant="soft"
-            color="neutral"
-            class="text-sm font-mono -ml-0.5"
-          >
-            <UiAmount
-              :value="portfolio.totalValue"
-              :options="{ includeZero: true }"
-            />
-          </UBadge>
+          <div class="flex items-center gap-2 flex-wrap">
+            <UBadge
+              variant="soft"
+              color="neutral"
+              class="text-sm font-mono -ml-0.5"
+            >
+              <UiAmount
+                :value="portfolio.totalValue"
+                :options="{ includeZero: true }"
+              />
+            </UBadge>
+            <span
+              v-if="portfolio.totalGain !== 0"
+              class="text-xs font-mono"
+              :class="portfolio.totalGain > 0 ? 'text-success' : 'text-error'"
+            >
+              {{ portfolio.totalGain > 0 ? '+' : ''
+              }}{{ formatCurrency(portfolio.totalGain) }}
+            </span>
+          </div>
         </template>
 
         <div
@@ -317,50 +361,10 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
       @confirm="handleDeletePortfolio"
     />
 
-    <UModal
+    <InvestmentsPortfolioPieChartModal
       v-model:open="chartModal"
-      :title="chartPortfolio?.name ?? ''"
-      :description="chartPortfolio?.description ?? undefined"
-      size="sm"
-    >
-      <template v-if="chartPortfolio" #description>
-        <span class="font-mono font-semibold text-foreground">
-          <UiAmount
-            :value="chartPortfolio.totalValue"
-            :options="{ includeZero: true }"
-          />
-        </span>
-      </template>
-      <template #body>
-        <div v-if="chartPortfolio" class="space-y-4">
-          <div
-            v-if="chartPortfolio.assets.length === 0"
-            class="text-center text-muted py-4"
-          >
-            Brak aktywów w portfelu.
-          </div>
-          <div v-else class="flex flex-col items-center gap-4">
-            <UiDonutChart
-              :size="200"
-              :segments="portfolioSegments(chartPortfolio)"
-            />
-            <div class="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-              <div
-                v-for="seg in portfolioSegments(chartPortfolio)"
-                :key="seg.label"
-                class="flex items-center gap-1 text-xs"
-              >
-                <span
-                  class="w-2.5 h-2.5 rounded-sm shrink-0"
-                  :style="{ background: seg.color }"
-                />
-                <span>{{ seg.label }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-    </UModal>
+      :portfolio="chartPortfolio"
+    />
 
     <ModalFormPortfolioAsset
       v-if="selectedPA"

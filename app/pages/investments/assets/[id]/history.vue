@@ -1,145 +1,99 @@
 <script setup lang="ts">
-import { h } from 'vue'
-
 const route = useRoute()
 const id = route.params.id as string
 
 const assetsStore = useAssetsStore()
 onMounted(() => assetsStore.fetchAssets())
-const asset = computed(() => assetsStore.assets.find((a) => a.id === id))
 
-const { data, pending, refresh } = useLazyFetch<APIResponse<AssetSnapshot[]>>(
-  `/api/investments/assets/${id}/snapshots`
-)
-const snapshots = computed(() => (data.value?.data ?? []).slice().reverse())
+const { data, pending, refresh } = useLazyFetch<
+  APIResponse<AssetPerformanceData>
+>(`/api/investments/assets/${id}/performance`)
 
-const { showError, showSuccess } = useToasts()
+const perf = computed(() => data.value?.data)
+const snapshots = computed(() => perf.value?.snapshots ?? [])
+const txs = computed(() => perf.value?.transactions ?? [])
+const yearlyPerf = useYearlyPerf(snapshots, txs)
 
-// --- add/edit ----
 const valueModal = ref(false)
 const editRow = ref<AssetSnapshot | null>(null)
+const historyRef = useTemplateRef<{ refresh: () => void }>('historyRef')
+
+const historyOpen = ref(false)
+const historyLoaded = ref(false)
+
+const toggleHistory = () => {
+  historyOpen.value = !historyOpen.value
+  if (!historyLoaded.value && historyOpen.value) historyLoaded.value = true
+}
 
 const openAdd = () => {
   editRow.value = null
   valueModal.value = true
 }
 
-const openEdit = (s: AssetSnapshot) => {
-  editRow.value = s
+const openEdit = (row: AssetSnapshot) => {
+  editRow.value = row
   valueModal.value = true
 }
 
 const onValueSuccess = async () => {
   valueModal.value = false
   await refresh()
+  historyRef.value?.refresh()
   assetsStore.fetchAssets({ force: true })
 }
 
-// ---- delete ----
-const deleteModal = ref(false)
-const deleteSnapshot = ref<AssetSnapshot | null>(null)
-const deleteLoading = ref(false)
-
-const openDelete = (s: AssetSnapshot) => {
-  deleteSnapshot.value = s
-  deleteModal.value = true
+const onHistoryChange = async () => {
+  await refresh()
+  assetsStore.fetchAssets({ force: true })
 }
 
-const handleDelete = async () => {
-  if (!deleteSnapshot.value) return
-  deleteLoading.value = true
-  try {
-    await $fetch(
-      `/api/investments/assets/${id}/snapshots/${deleteSnapshot.value.id}`,
-      {
-        method: 'DELETE',
-      }
-    )
-    showSuccess('Pomiar został usunięty')
-    deleteModal.value = false
-    await refresh()
-    assetsStore.fetchAssets({ force: true })
-  } catch {
-    showError('Nie udało się usunąć pomiaru')
-  } finally {
-    await modalCloseAnimation()
-    deleteLoading.value = false
-  }
-}
-
-// ---- columns ----
-const deltaClass = (v: number | null) =>
-  v === null
-    ? 'text-muted'
-    : v > 0
-      ? 'text-success'
-      : v < 0
-        ? 'text-error'
-        : 'text-muted'
-
-const fmtDelta = (abs: number | null, pct: number | null) => {
-  if (abs === null) return '—'
-  const sign = abs > 0 ? '+' : ''
-  const p = pct !== null ? ` (${sign}${formatNumber(pct)}%)` : ''
-  return `${sign}${formatCurrency(abs)}${p}`
-}
-
-const columns = [
-  ...createColumns<AssetSnapshot>(['date', 'value', 'vsPrev', 'vsFirst'], {
-    value: { mapValue: (v) => formatCurrency(v as number) },
-    vsPrev: {
-      mapValue: (_, row) =>
-        h(
-          'span',
-          { class: deltaClass(row.vsPrev) },
-          fmtDelta(row.vsPrev, row.vsPrevPercent)
-        ),
-    },
-    vsFirst: {
-      mapValue: (_, row) =>
-        h(
-          'span',
-          { class: deltaClass(row.vsFirst) },
-          fmtDelta(row.vsFirst, row.vsFirstPercent)
-        ),
-    },
-  }),
-  createActionColumn<AssetSnapshot>('Akcje', [
-    { edit: true, onClick: openEdit },
-    { delete: true, onClick: openDelete },
-  ]),
-]
-
-const table = useTemplateRef('table')
-const columnVisibility = useLocalStorage(
-  `table-columns-asset-history-${id}`,
-  {}
-)
+provide(assetDetailLayoutKey, {
+  createLabel: 'Nowy pomiar',
+  openCreate: openAdd,
+  loading: computed(() => pending.value),
+  onRefresh: () => refresh(),
+})
 </script>
 
 <template>
-  <div>
-    <SubHeader
-      v-model="columnVisibility"
-      :title="`${asset?.name ?? '…'} — Historia wartości`"
-      :refresh-loading="pending"
-      :table="table"
-      create-button
-      back-button
-      create-label="Nowy pomiar"
-      @refresh="refresh()"
-      @create="openAdd"
-    />
+  <WrappersAssetDetail>
+    <div class="mt-4 space-y-6">
+      <div class="rounded-lg border border-default p-4">
+        <InvestmentsAssetChart
+          :snapshots="perf?.snapshots ?? []"
+          :transactions="perf?.transactions"
+          :loading="pending"
+        />
+      </div>
 
-    <UTable
-      ref="table"
-      v-model:column-visibility="columnVisibility"
-      :data="snapshots"
-      :columns="columns"
-      :loading="pending"
-      :empty="pending ? 'Ładowanie…' : 'Brak pomiarów'"
-      class="mt-4"
-    />
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-wide mb-3 px-3">
+          Wyniki roczne
+        </p>
+        <InvestmentsYearlyPerfTable :data="yearlyPerf" :loading="pending" />
+      </div>
+
+      <UButton
+        variant="ghost"
+        class="w-full uppercase py-2 justify-between"
+        color="neutral"
+        :trailing-icon="
+          historyOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+        "
+        @click="toggleHistory"
+      >
+        Historia wartości rynkowej
+      </UButton>
+      <div v-if="historyLoaded" v-show="historyOpen">
+        <InvestmentsAssetHistory
+          ref="historyRef"
+          :asset-id="id"
+          @edit="openEdit"
+          @change="onHistoryChange"
+        />
+      </div>
+    </div>
 
     <ModalFormAssetValue
       v-model:open="valueModal"
@@ -147,13 +101,5 @@ const columnVisibility = useLocalStorage(
       :row="editRow"
       @success="onValueSuccess"
     />
-
-    <UiConfirmModal
-      v-model:open="deleteModal"
-      :title="`Usuń pomiar z ${deleteSnapshot?.date ?? ''}?`"
-      description="Tej operacji nie można cofnąć."
-      :loading="deleteLoading"
-      @confirm="handleDelete"
-    />
-  </div>
+  </WrappersAssetDetail>
 </template>

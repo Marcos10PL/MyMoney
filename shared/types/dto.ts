@@ -43,6 +43,9 @@ export type PortfolioAssetEntry = Pick<
 > & {
   asset: Pick<AppAsset, 'id' | 'name' | 'type'>
   effectiveValue: number
+  costBasis: number
+  gain: number
+  gainPercent: number | null
   actualPercent: number
   drift: number | null
   isDrifting: boolean
@@ -51,6 +54,8 @@ export type PortfolioAssetEntry = Pick<
 export type Portfolio = Omit<AppPortfolio, 'userId'> & {
   assets: PortfolioAssetEntry[]
   totalValue: number
+  totalCostBasis: number
+  totalGain: number
 }
 
 export type AssetSnapshot = Omit<AppAssetSnapshot, 'assetId' | 'value'> & {
@@ -66,4 +71,18 @@ export type AssetPurchase = Pick<
   'id' | 'name' | 'type' | 'amount' | 'quantity' | 'date' | 'description'
 > & {
   account: Pick<AppAccount, 'id' | 'name'>
+}
+
+export type AssetYearlyPerf = {
+  year: number
+  startValue: number | null
+  endValue: number | null
+  netInvested: number
+  gain: number | null
+  returnPercent: number | null
+}
+
+export type AssetPerformanceData = {
+  snapshots: { date: string; value: number }[]
+  transactions: { date: string; type: string; amount: number }[]
 }

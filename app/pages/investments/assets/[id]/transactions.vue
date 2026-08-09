@@ -7,7 +7,6 @@ const id = route.params.id as string
 
 const assetsStore = useAssetsStore()
 onMounted(() => assetsStore.fetchAssets())
-const asset = computed(() => assetsStore.assets.find((a) => a.id === id))
 
 const { showError, showSuccess } = useToasts()
 
@@ -15,7 +14,6 @@ const { data, pending, refresh } = useLazyFetch<APIResponse<AssetPurchase[]>>(
   `/api/investments/assets/${id}/purchases`
 )
 
-// ---- buy/sell modal ----
 const buyModal = ref(false)
 const editRow = ref<AssetPurchase | null>(null)
 
@@ -35,7 +33,6 @@ const onBuySuccess = async () => {
   assetsStore.fetchAssets({ force: true })
 }
 
-// ---- delete ----
 const deleteModal = ref(false)
 const deleteRow = ref<AssetPurchase | null>(null)
 const deleteLoading = ref(false)
@@ -64,7 +61,6 @@ const handleDelete = async () => {
   }
 }
 
-// ---- columns ----
 const columns = [
   ...createColumns<AssetPurchase>(
     ['name', 'type', 'account', 'amount', 'quantity', 'date'],
@@ -94,22 +90,26 @@ const columnVisibility = useLocalStorage(
   `table-columns-asset-transactions-${id}`,
   {}
 )
+
+const columnVisibilityComputed = computed({
+  get: () => columnVisibility.value,
+  set: (val) => {
+    columnVisibility.value = val
+  },
+})
+
+provide(assetDetailLayoutKey, {
+  createLabel: 'Zakup / sprzedaż',
+  openCreate,
+  loading: computed(() => pending.value),
+  table: computed(() => table.value),
+  columnVisibility: columnVisibilityComputed,
+  onRefresh: () => refresh(),
+})
 </script>
 
 <template>
-  <div>
-    <SubHeader
-      v-model="columnVisibility"
-      :title="`${asset?.name ?? '…'} — Historia transakcji`"
-      :refresh-loading="pending"
-      :table="table"
-      create-button
-      back-button
-      create-label="Zakup/sprzedaż"
-      @refresh="refresh()"
-      @create="openCreate"
-    />
-
+  <WrappersAssetDetail>
     <UTable
       ref="table"
       v-model:column-visibility="columnVisibility"
@@ -134,5 +134,5 @@ const columnVisibility = useLocalStorage(
       :loading="deleteLoading"
       @confirm="handleDelete"
     />
-  </div>
+  </WrappersAssetDetail>
 </template>

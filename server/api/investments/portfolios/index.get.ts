@@ -1,10 +1,11 @@
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
 import {
   assetAccounts,
   assets,
   portfolioAssets,
   portfolios,
+  transactions,
 } from '~~/server/db/schema'
 
 export default defineEventHandler(async (event) => {
@@ -34,15 +35,39 @@ export default defineEventHandler(async (event) => {
 
   const assetIds = paRows.flatMap((r) => (r.assets ? [r.assets.id] : []))
 
-  const [assetAccountLinks, accountBalances] = await Promise.all([
-    assetIds.length > 0
-      ? db
-          .select()
-          .from(assetAccounts)
-          .where(inArray(assetAccounts.assetId, assetIds))
-      : Promise.resolve([]),
-    computeAccountBalances(user.id),
-  ])
+  const [assetAccountLinks, accountBalances, costBasisRows] = await Promise.all(
+    [
+      assetIds.length > 0
+        ? db
+            .select()
+            .from(assetAccounts)
+            .where(inArray(assetAccounts.assetId, assetIds))
+        : Promise.resolve([]),
+      computeAccountBalances(user.id),
+      assetIds.length > 0
+        ? db
+            .select({
+              assetId: transactions.assetId,
+              costBasis: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'investment_buy' THEN ${transactions.amount}::numeric ELSE -${transactions.amount}::numeric END), 0)`,
+            })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.userId, user.id),
+                isNotNull(transactions.assetId),
+                inArray(transactions.assetId, assetIds)
+              )
+            )
+            .groupBy(transactions.assetId)
+        : Promise.resolve([]),
+    ]
+  )
+
+  const costBasisByAsset = new Map<string, number>()
+  for (const row of costBasisRows) {
+    if (row.assetId)
+      costBasisByAsset.set(row.assetId, parseFloat(row.costBasis))
+  }
 
   const linkedAccountIdsByAsset = new Map<string, string[]>()
   for (const link of assetAccountLinks) {
@@ -81,6 +106,7 @@ export default defineEventHandler(async (event) => {
       asset: AppAsset
       currentValue: number
       remainingValue: number
+      costBasis: number
     }>
   >()
 
@@ -91,8 +117,9 @@ export default defineEventHandler(async (event) => {
       0,
       currentValue - (explicitAllocByAsset.get(asset.id) ?? 0)
     )
+    const costBasis = costBasisByAsset.get(asset.id) ?? 0
     const list = paByPortfolio.get(pa.portfolioId) ?? []
-    list.push({ pa, asset, currentValue, remainingValue })
+    list.push({ pa, asset, currentValue, remainingValue, costBasis })
     paByPortfolio.set(pa.portfolioId, list)
   }
 

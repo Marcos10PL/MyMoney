@@ -12,7 +12,8 @@ export const mapAssetToDTO = (
           0
         )
       : 0
-  const currentValue = manual > 0 ? manual : accountsSum > 0 ? accountsSum : costBasis
+  const currentValue =
+    manual > 0 ? manual : accountsSum > 0 ? accountsSum : costBasis
 
   const profit = costBasis > 0 ? currentValue - costBasis : 0
   const profitPercent = costBasis > 0 ? (profit / costBasis) * 100 : null
@@ -44,6 +45,7 @@ export const mapPortfolioToDTO = (
     asset: AppAsset
     currentValue: number
     remainingValue: number
+    costBasis: number
   }>
 ): Portfolio => {
   const totalValue = entries.reduce((sum, { pa, remainingValue }) => {
@@ -54,12 +56,21 @@ export const mapPortfolioToDTO = (
     return sum + effective
   }, 0)
 
+  let totalCostBasis = 0
+
   const assets: PortfolioAssetEntry[] = entries.map(
-    ({ pa, asset, remainingValue }) => {
+    ({ pa, asset, currentValue, remainingValue, costBasis }) => {
       const effectiveValue =
         pa.allocatedAmount !== null
           ? parseFloat(pa.allocatedAmount) || 0
           : remainingValue
+      const proportion = currentValue > 0 ? effectiveValue / currentValue : 1
+      const entryCostBasis = proportion * costBasis
+      totalCostBasis += entryCostBasis
+      const entryGain = effectiveValue - entryCostBasis
+      const entryGainPercent =
+        entryCostBasis > 0 ? (entryGain / entryCostBasis) * 100 : null
+
       const actualPercent =
         totalValue > 0 ? (effectiveValue / totalValue) * 100 : 0
       const target =
@@ -77,12 +88,17 @@ export const mapPortfolioToDTO = (
         targetPercent: pa.targetPercent,
         maxDeviation: pa.maxDeviation,
         effectiveValue,
+        costBasis: entryCostBasis,
+        gain: entryGain,
+        gainPercent: entryGainPercent,
         actualPercent,
         drift,
         isDrifting,
       }
     }
   )
+
+  const totalGain = totalValue - totalCostBasis
 
   return {
     id: portfolio.id,
@@ -92,6 +108,8 @@ export const mapPortfolioToDTO = (
     updatedAt: new Date(portfolio.updatedAt),
     assets,
     totalValue,
+    totalCostBasis,
+    totalGain,
   }
 }
 

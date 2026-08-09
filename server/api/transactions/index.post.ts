@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { assetSnapshots, transactions } from '~~/server/db/schema'
+import { assetSnapshots, assets, transactions } from '~~/server/db/schema'
 import { createTransactionBodySchema } from '~~/server/schema/body'
 
 export default defineEventHandler(async (event) => {
@@ -65,18 +65,22 @@ export default defineEventHandler(async (event) => {
     }
 
     if (body.marketValue && body.assetId) {
-      const today = new Date().toISOString().split('T')[0]!
+      const snapshotDate = new Date(body.date).toISOString().split('T')[0]!
       await tx
         .insert(assetSnapshots)
         .values({
           assetId: body.assetId,
           value: String(body.marketValue),
-          date: today,
+          date: snapshotDate,
         })
         .onConflictDoUpdate({
           target: [assetSnapshots.assetId, assetSnapshots.date],
           set: { value: String(body.marketValue) },
         })
+      await tx
+        .update(assets)
+        .set({ value: String(body.marketValue) })
+        .where(eq(assets.id, body.assetId))
     }
   })
 
