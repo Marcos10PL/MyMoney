@@ -116,9 +116,12 @@ const assetColumns = [
               variant: 'subtle',
               color: 'neutral',
               class: 'border',
-              style: { borderColor: ASSET_TYPE_COLORS[row.type], opacity: 0.9 },
+              style: {
+                borderColor: ASSET_TYPE_META[row.type].color,
+                opacity: 0.9,
+              },
             },
-            ASSET_TYPES_LABELS[row.type]
+            ASSET_TYPE_META[row.type].label
           ),
       },
       accounts: {

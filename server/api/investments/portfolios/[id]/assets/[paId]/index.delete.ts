@@ -1,6 +1,6 @@
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { portfolioAssets, portfolios } from '~~/server/db/schema'
+import { portfolioAssets } from '~~/server/db/schema'
 import { portfolioAssetParamSchema } from '~~/server/schema/query'
 
 export default defineEventHandler(async (event) => {
@@ -10,30 +10,8 @@ export default defineEventHandler(async (event) => {
     portfolioAssetParamSchema.parse
   )
 
-  const [portfolio] = await db
-    .select()
-    .from(portfolios)
-    .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, user.id)))
-    .limit(1)
-
-  if (!portfolio) {
-    throw createError({ statusCode: 404, message: 'Portfolio not found' })
-  }
-
-  const [pa] = await db
-    .select()
-    .from(portfolioAssets)
-    .where(
-      and(
-        eq(portfolioAssets.id, paId),
-        eq(portfolioAssets.portfolioId, portfolioId)
-      )
-    )
-    .limit(1)
-
-  if (!pa) {
-    throw createError({ statusCode: 404, message: 'Portfolio asset not found' })
-  }
+  await requirePortfolio(portfolioId, user.id)
+  await requirePortfolioAsset(paId, portfolioId)
 
   await db.delete(portfolioAssets).where(eq(portfolioAssets.id, paId))
 

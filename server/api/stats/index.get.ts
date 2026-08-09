@@ -3,7 +3,6 @@ import { db } from '~~/server/db/conn'
 import {
   accounts,
   assets,
-  assetAccounts,
   banks,
   categories,
   transactions,
@@ -25,14 +24,12 @@ export default defineEventHandler(async (event) => {
     userTransactions,
     userCategories,
     userAssets,
-    assetAccountLinks,
   ] = await Promise.all([
     db.select().from(banks).where(eq(banks.userId, user.id)),
     db.select().from(accounts).where(eq(accounts.userId, user.id)),
     db.select().from(transactions).where(eq(transactions.userId, user.id)),
     db.select().from(categories).where(eq(categories.userId, user.id)),
     db.select().from(assets).where(eq(assets.userId, user.id)),
-    db.select().from(assetAccounts),
   ])
 
   const categoriesMap: Record<string, string> = {}
@@ -156,18 +153,6 @@ export default defineEventHandler(async (event) => {
   )
 
   const totalAmountOwedToMe = debtors.reduce((sum, d) => sum + d.amountToPay, 0)
-
-  const accountBalances: Record<string, number> = {}
-  for (const [id, stats] of Object.entries(accountStatsMap)) {
-    accountBalances[id] = stats.balance
-  }
-
-  const linkedAccountsByAsset = new Map<string, string[]>()
-  for (const link of assetAccountLinks) {
-    const list = linkedAccountsByAsset.get(link.assetId) ?? []
-    list.push(link.accountId)
-    linkedAccountsByAsset.set(link.assetId, list)
-  }
 
   // Only count assets with manually-set market values.
   // Assets valued via linked accounts are already included in totalBalance.

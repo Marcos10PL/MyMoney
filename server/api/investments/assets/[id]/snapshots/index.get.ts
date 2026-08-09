@@ -1,22 +1,20 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { assetSnapshots, assets } from '~~/server/db/schema'
+import { assetSnapshots } from '~~/server/db/schema'
 import { idParamSchema } from '~~/server/schema/query'
 
 export default defineEventHandler(async (event) => {
   const { user } = getEventContext(event)
   const { id } = await getValidatedRouterParams(event, idParamSchema.parse)
 
-  const [asset] = await db
-    .select()
-    .from(assets)
-    .where(and(eq(assets.id, id), eq(assets.userId, user.id)))
-    .limit(1)
-
-  if (!asset) throw createError({ statusCode: 404, message: 'Asset not found' })
+  await requireAsset(id, user.id)
 
   const rows = await db
-    .select({ id: assetSnapshots.id, date: assetSnapshots.date, value: assetSnapshots.value })
+    .select({
+      id: assetSnapshots.id,
+      date: assetSnapshots.date,
+      value: assetSnapshots.value,
+    })
     .from(assetSnapshots)
     .where(eq(assetSnapshots.assetId, id))
     .orderBy(asc(assetSnapshots.date))

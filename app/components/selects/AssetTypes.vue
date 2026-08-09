@@ -4,9 +4,9 @@ defineProps<{
   multiple?: boolean
 }>()
 
-const items = Object.entries(ASSET_TYPES_LABELS).map(([value, label]) => ({
+const items = Object.entries(ASSET_TYPE_META).map(([value, meta]) => ({
   value,
-  label,
+  label: meta.label,
 }))
 
 const model = defineModel<string | string[]>()

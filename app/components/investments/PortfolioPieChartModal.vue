@@ -17,7 +17,8 @@ const options = computed(() => ({
     animations: { enabled: false },
   },
   theme: { mode: isDark.value ? 'dark' : 'light' },
-  colors: portfolio?.assets.map((a) => ASSET_TYPE_COLORS[a.asset.type]) ?? [],
+  colors:
+    portfolio?.assets.map((a) => ASSET_TYPE_META[a.asset.type].color) ?? [],
   labels: portfolio?.assets.map((a) => a.asset.name) ?? [],
   legend: { position: 'bottom', fontSize: '12px' },
   dataLabels: {

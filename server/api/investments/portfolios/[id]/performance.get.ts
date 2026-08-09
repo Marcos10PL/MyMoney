@@ -6,10 +6,13 @@ import {
   portfolioAssets,
   transactions,
 } from '~~/server/db/schema'
+import { idParamSchema } from '~~/server/schema/query'
 
 export default defineEventHandler(async (event) => {
   const { user } = getEventContext(event)
-  const portfolioId = getRouterParam(event, 'id')!
+  const { id: portfolioId } = await getValidatedRouterParams(event, idParamSchema.parse)
+
+  await requirePortfolio(portfolioId, user.id)
 
   const paRows = await db
     .select()

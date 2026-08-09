@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
 import { accounts, assetAccounts, assets, banks } from '~~/server/db/schema'
 import { updateAssetBodySchema } from '~~/server/schema/body'
@@ -9,15 +9,7 @@ export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, idParamSchema.parse)
   const body = await readValidatedBody(event, updateAssetBodySchema.parse)
 
-  const [existing] = await db
-    .select()
-    .from(assets)
-    .where(and(eq(assets.id, id), eq(assets.userId, user.id)))
-    .limit(1)
-
-  if (!existing) {
-    throw createError({ statusCode: 404, message: 'Asset not found' })
-  }
+  await requireAsset(id, user.id)
 
   const linkedAccounts: Array<AppAccount & { bankName: string | null }> = []
   if (body.accountIds.length > 0) {

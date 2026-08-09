@@ -32,7 +32,7 @@ const displayModel = computed({
     <template #item="{ item }">
       <span class="flex-1 truncate">{{ item.label }}</span>
       <span class="text-xs text-muted ml-2 shrink-0">
-        {{ ASSET_TYPES_LABELS[item.type as AppAssetType] }}
+        {{ ASSET_TYPE_META[item.type as AppAssetType].label }}
       </span>
     </template>
   </UiSelectMenu>

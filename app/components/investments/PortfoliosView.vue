@@ -130,7 +130,7 @@ type PARow = PortfolioAssetEntry & { _color: string }
 const portfolioEntriesWithColor = (portfolio: Portfolio): PARow[] =>
   portfolio.assets.map((entry) => ({
     ...entry,
-    _color: ASSET_TYPE_COLORS[entry.asset.type],
+    _color: ASSET_TYPE_META[entry.asset.type].color,
   }))
 
 const colorVal = (val: number, fmt: string) =>

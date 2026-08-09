@@ -40,16 +40,23 @@ export const TRANSACTION_TYPES_COLORS = {
   investment_sell: 'primary',
 } as const satisfies Record<AppTransactionType, string>
 
-export const ASSET_TYPES_LABELS = {
-  bonds: 'Obligacje',
-  etf: 'ETF',
-  stocks: 'Akcje',
-  gold: 'Złoto',
-  real_estate: 'Nieruchomości',
-  crypto: 'Kryptowaluty',
-  cash: 'Gotówka',
-  other: 'Inne',
-} as const satisfies Record<AppAssetType, string>
+export const ASSET_TYPE_META = {
+  bonds: { label: 'Obligacje', color: '#6366f1', icon: 'i-lucide-scroll-text' },
+  etf: { label: 'ETF', color: '#3b82f6', icon: 'i-lucide-trending-up' },
+  stocks: { label: 'Akcje', color: '#10b981', icon: 'i-lucide-bar-chart-2' },
+  gold: { label: 'Złoto', color: '#f59e0b', icon: 'i-lucide-gem' },
+  real_estate: {
+    label: 'Nieruchomości',
+    color: '#f97316',
+    icon: 'i-lucide-building-2',
+  },
+  crypto: { label: 'Kryptowaluty', color: '#8b5cf6', icon: 'i-lucide-bitcoin' },
+  cash: { label: 'Gotówka', color: '#14b8a6', icon: 'i-lucide-banknote' },
+  other: { label: 'Inne', color: '#84cc16', icon: 'i-lucide-package' },
+} as const satisfies Record<
+  AppAssetType,
+  { label: string; color: string; icon: string }
+>
 
 export const CHART_PALETTE = [
   '#6366f1',
@@ -63,28 +70,6 @@ export const CHART_PALETTE = [
   '#ec4899',
   '#84cc16',
 ] as const
-
-export const ASSET_TYPE_COLORS = {
-  bonds: '#6366f1',
-  etf: '#3b82f6',
-  stocks: '#10b981',
-  gold: '#f59e0b',
-  real_estate: '#f97316',
-  crypto: '#8b5cf6',
-  cash: '#14b8a6',
-  other: '#84cc16',
-} as const satisfies Record<AppAssetType, string>
-
-export const ASSET_TYPES_ICONS = {
-  bonds: 'i-lucide-scroll-text',
-  etf: 'i-lucide-trending-up',
-  stocks: 'i-lucide-bar-chart-2',
-  gold: 'i-lucide-gem',
-  real_estate: 'i-lucide-building-2',
-  crypto: 'i-lucide-bitcoin',
-  cash: 'i-lucide-banknote',
-  other: 'i-lucide-package',
-} as const satisfies Record<AppAssetType, string>
 
 export const LINKS = {
   DASHBOARD: '/',

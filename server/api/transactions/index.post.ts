@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
       await tx
         .update(assets)
         .set({ value: String(body.marketValue) })
-        .where(eq(assets.id, body.assetId))
+        .where(and(eq(assets.id, body.assetId), eq(assets.userId, user.id)))
     }
   })
 
