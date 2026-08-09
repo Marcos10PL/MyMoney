@@ -1,21 +1,26 @@
 export const mapAssetToDTO = (
   asset: AppAsset,
   linkedAccounts: Array<AppAccount & { bankName: string | null }>,
-  accountBalances: Record<string, number>
+  accountBalances: Record<string, number>,
+  costBasis = 0
 ): Asset => {
-  const currentValue =
+  const manual = parseFloat(asset.value) || 0
+  const accountsSum =
     linkedAccounts.length > 0
       ? linkedAccounts.reduce(
           (sum, acc) => sum + (accountBalances[acc.id] ?? 0),
           0
         )
-      : parseFloat(asset.value) || 0
+      : 0
+  const currentValue = manual > 0 ? manual : accountsSum > 0 ? accountsSum : costBasis
+
+  const profit = costBasis > 0 ? currentValue - costBasis : 0
+  const profitPercent = costBasis > 0 ? (profit / costBasis) * 100 : null
 
   return {
     id: asset.id,
     name: asset.name,
     type: asset.type,
-    value: asset.value,
     currency: asset.currency,
     description: asset.description,
     createdAt: new Date(asset.createdAt),
@@ -26,6 +31,9 @@ export const mapAssetToDTO = (
       bankName: a.bankName,
     })),
     currentValue,
+    costBasis,
+    profit,
+    profitPercent,
   }
 }
 
@@ -136,12 +144,14 @@ export const mapTransactionToDTO = (
   account: AppAccount,
   category: AppCategory | null,
   toAccount: AppAccount | null,
-  transaction: AppTransaction | null
+  transaction: AppTransaction | null,
+  asset: AppAsset | null = null
 ): Transaction => {
   return {
     id: tx.id,
     type: tx.type,
     amount: tx.amount,
+    quantity: tx.quantity,
     description: tx.description,
     name: tx.name,
     counterparty: tx.counterparty,
@@ -171,6 +181,12 @@ export const mapTransactionToDTO = (
       ? {
           id: transaction.id,
           name: transaction.name,
+        }
+      : null,
+    asset: asset
+      ? {
+          id: asset.id,
+          name: asset.name,
         }
       : null,
   }

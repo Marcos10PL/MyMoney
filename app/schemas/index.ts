@@ -177,6 +177,35 @@ export const portfolioAssetSchema = z.object({
   maxDeviation: decimalFieldSchema(0, 100).optional().nullable(),
 })
 
+export const investmentBuySchema = z.object({
+  assetId: idFieldSchema,
+  accountId: idFieldSchema,
+  amount: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
+  quantity: decimalFieldSchema(0.000001, 999999999).optional().nullable(),
+  date: z.iso.datetime('Data jest wymagana'),
+  name: textFieldSchema(
+    VALIDATION.TRANSACTION_NAME_MIN_LENGTH,
+    VALIDATION.TRANSACTION_NAME_MAX_LENGTH
+  ).optional(),
+  description: textFieldSchema(
+    VALIDATION.TRANSACTION_DESCRIPTION_MIN_LENGTH,
+    VALIDATION.TRANSACTION_DESCRIPTION_MAX_LENGTH
+  )
+    .optional()
+    .or(z.literal('')),
+  type: z
+    .enum([
+      TRANSACTION_TYPES.INVESTMENT_BUY!,
+      TRANSACTION_TYPES.INVESTMENT_SELL!,
+    ])
+    .default(TRANSACTION_TYPES.INVESTMENT_BUY!),
+})
+
+export const assetSnapshotSchema = z.object({
+  value: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
+  date: z.iso.date().optional(),
+})
+
 // --- TYPES ---
 export type BankBody = z.infer<typeof bankSchema>
 export type CategoryBody = z.infer<typeof categorySchema>
@@ -184,3 +213,4 @@ export type AccountBody = z.infer<typeof accountSchema>
 export type AssetBody = z.infer<typeof assetSchema>
 export type PortfolioBody = z.infer<typeof portfolioSchema>
 export type PortfolioAssetBody = z.infer<typeof portfolioAssetSchema>
+export type InvestmentBuyBody = z.infer<typeof investmentBuySchema>

@@ -18,7 +18,7 @@ const setDefaults = (): Schema => ({
   accountIds: row?.accounts.map((a) => a.id) ?? [],
   name: row?.name ?? '',
   type: row?.type ?? ASSET_TYPES.OTHER,
-  value: row?.accounts.length ? 0 : parseFloat(row?.value ?? '0') || 0,
+  value: 0,
   currency: row?.currency ?? 'PLN',
   description: row?.description ?? '',
 })
@@ -99,18 +99,18 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         </UFormField>
 
         <UiInputNumber
-          v-if="!linkedAccounts"
+          v-if="!row"
           v-model="state.value"
           name="value"
-          label="Wartość"
+          label="Wartość rynkowa (PLN)"
           :min="0"
           :max="VALIDATION.TRANSACTION_AMOUNT_MAX"
           :step="0.01"
           :format-options="{ maximumFractionDigits: 2 }"
         />
 
-        <p v-else class="text-sm text-muted -mt-2">
-          Wartość łączna powiązanych kont:
+        <p v-if="linkedAccounts" class="text-sm text-muted -mt-2">
+          Łączne saldo powiązanych kont:
           <span class="font-mono font-semibold text-foreground pl-1.5">
             <UiAmount :value="selectedTotal" :options="{ includeZero: true }" />
           </span>

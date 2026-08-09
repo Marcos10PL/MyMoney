@@ -7,6 +7,8 @@ defineProps<{
   loanPercent: number
   netPositive: boolean
   loading?: boolean
+  totalInvestmentValue?: number
+  netWorth?: number
 }>()
 </script>
 
@@ -43,6 +45,21 @@ defineProps<{
             size="xs"
             variant="soft"
           />
+        </div>
+
+        <div v-if="totalInvestmentValue" class="mt-3 space-y-1">
+          <div class="flex items-center gap-2 text-xs text-muted">
+            <span class="uppercase font-semibold tracking-wide">Inwestycje</span>
+            <span class="font-mono font-semibold text-foreground">
+              <UiAmount :value="totalInvestmentValue" />
+            </span>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="uppercase font-semibold tracking-wide text-muted">Majątek netto</span>
+            <span class="font-mono font-semibold text-foreground text-sm">
+              <UiAmount :value="netWorth ?? 0" />
+            </span>
+          </div>
         </div>
       </div>
       <div

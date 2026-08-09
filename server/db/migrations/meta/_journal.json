@@ -50,6 +50,20 @@
       "when": 1786180446430,
       "tag": "0006_bored_blink",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786215951735,
+      "tag": "0007_clumsy_tenebrous",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786219424120,
+      "tag": "0008_amazing_johnny_storm",
+      "breakpoints": true
     }
   ]
 }

@@ -106,6 +106,10 @@ export const createTransactionBodySchema = z
       .or(z.literal(''))
       .transform((val) => (val === '' ? null : val)),
     date: z.iso.datetime(),
+
+    assetId: idFieldSchema.optional().nullable(),
+    quantity: z.number().positive().optional().nullable(),
+    marketValue: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX).optional().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.type === TRANSACTION_TYPES.TRANSFER && !data.toAccountId) {
@@ -144,6 +148,17 @@ export const createTransactionBodySchema = z
         path: ['transactionId'],
       })
     }
+    if (
+      (data.type === TRANSACTION_TYPES.INVESTMENT_BUY ||
+        data.type === TRANSACTION_TYPES.INVESTMENT_SELL) &&
+      !data.assetId
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Asset is required for investment transactions',
+        path: ['assetId'],
+      })
+    }
   })
   .transform((data) => {
     if (
@@ -152,9 +167,14 @@ export const createTransactionBodySchema = z
     ) {
       data.categoryId = null
     }
-
     if (data.type !== TRANSACTION_TYPES.TRANSFER) data.toAccountId = null
-
+    if (
+      data.type !== TRANSACTION_TYPES.INVESTMENT_BUY &&
+      data.type !== TRANSACTION_TYPES.INVESTMENT_SELL
+    ) {
+      data.assetId = null
+      data.quantity = null
+    }
     return data
   })
 
@@ -163,7 +183,7 @@ export const updateTransactionBodySchema =
     if (data.type === TRANSACTION_TYPES.TRANSFER) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Updating transaction type to transfer is not allowed',
+        message: 'Updating transaction type to this type is not allowed',
         path: ['type'],
       })
     }
@@ -216,4 +236,9 @@ export const addPortfolioAssetBodySchema = z.object({
 
 export const updatePortfolioAssetBodySchema = addPortfolioAssetBodySchema.omit({
   assetId: true,
+})
+
+export const assetSnapshotBodySchema = z.object({
+  value: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
+  date: z.iso.date().optional(),
 })

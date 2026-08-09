@@ -12,9 +12,14 @@ type Props = CreateProps &
     title?: string
     refreshLoading?: boolean
     showActionsPin?: boolean
+    backButton?: boolean
   }
 
-const { table, showActionsPin = true } = defineProps<Props>()
+const {
+  table,
+  showActionsPin = true,
+  backButton = false,
+} = defineProps<Props>()
 
 const columnVisibility = defineModel<Record<string, boolean>>({
   default: () => ({}),
@@ -61,6 +66,14 @@ watch(pinActions, (newVal) => {
         <div
           class="flex gap-2 items-center w-full sm:w-auto self-start sm:self-auto pb-2 sm:pb-0"
         >
+          <UTooltip v-if="backButton" text="Powrót">
+            <UButton
+              icon="i-lucide-arrow-left"
+              variant="soft"
+              color="neutral"
+              @click="$router.back()"
+            />
+          </UTooltip>
           <h2 v-if="title" class="font-medium">
             {{ title }}
           </h2>
@@ -109,7 +122,11 @@ watch(pinActions, (newVal) => {
                 ? 'material-symbols:keep-off-outline'
                 : 'material-symbols:keep-outline'
             "
-            @click="pinActions = !pinActions"
+            @click="
+              () => {
+                pinActions = !pinActions
+              }
+            "
           />
         </UTooltip>
       </div>

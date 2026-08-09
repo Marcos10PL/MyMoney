@@ -1,4 +1,5 @@
 import {
+  date,
   index,
   numeric,
   pgEnum,
@@ -6,6 +7,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core'
 import { users } from './users'
@@ -46,6 +48,22 @@ export const assets = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [index('assets_user_id_idx').on(t.userId)]
+)
+
+export const assetSnapshots = pgTable(
+  'asset_snapshots',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    assetId: uuid('asset_id')
+      .notNull()
+      .references(() => assets.id, { onDelete: 'cascade' }),
+    value: numeric('value', { precision: 15, scale: 2 }).notNull(),
+    date: date('date').notNull(),
+  },
+  (t) => [
+    unique('asset_snapshots_asset_date_unique').on(t.assetId, t.date),
+    index('asset_snapshots_asset_id_idx').on(t.assetId),
+  ]
 )
 
 export const assetAccounts = pgTable(

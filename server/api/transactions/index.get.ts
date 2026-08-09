@@ -14,7 +14,7 @@ import {
   sum,
 } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { accounts, categories, transactions } from '~~/server/db/schema'
+import { accounts, assets, categories, transactions } from '~~/server/db/schema'
 import { transactionsQuerySchema } from '~~/server/schema/query'
 
 const toAccounts = alias(accounts, 'to_accounts')
@@ -84,6 +84,7 @@ export default defineEventHandler(async (event) => {
       .leftJoin(categories, eq(transactions.categoryId, categories.id))
       .leftJoin(toAccounts, eq(transactions.toAccountId, toAccounts.id))
       .leftJoin(tx, eq(transactions.transactionId, tx.id))
+      .leftJoin(assets, eq(transactions.assetId, assets.id))
       .where(and(...conditions))
       .limit(limit)
       .offset((page - 1) * limit)
@@ -97,8 +98,16 @@ export default defineEventHandler(async (event) => {
   return {
     success: true,
     message: 'Transactions fetched successfully',
-    data: items.map(({ transactions, accounts, categories, to_accounts, tx }) =>
-      mapTransactionToDTO(transactions, accounts, categories, to_accounts, tx)
+    data: items.map(
+      ({ transactions, accounts, categories, to_accounts, tx, assets }) =>
+        mapTransactionToDTO(
+          transactions,
+          accounts,
+          categories,
+          to_accounts,
+          tx,
+          assets
+        )
     ),
     pagination: {
       page,

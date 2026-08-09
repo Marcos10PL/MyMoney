@@ -125,7 +125,7 @@ const onSubmit = async (
           :rows="3"
         />
 
-        <UFormField name="bankId" label="Bank">
+        <UFormField name="bankId" label="Instytucja (opcjonalnie)">
           <SelectsBanks v-model="state.bankId" clearable class="w-full" />
         </UFormField>
 

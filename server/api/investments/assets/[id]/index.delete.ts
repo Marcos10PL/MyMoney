@@ -1,6 +1,6 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { assets } from '~~/server/db/schema'
+import { assets, transactions } from '~~/server/db/schema'
 import { idParamSchema } from '~~/server/schema/query'
 
 export default defineEventHandler(async (event) => {
@@ -17,7 +17,21 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Asset not found' })
   }
 
-  await db.delete(assets).where(eq(assets.id, id))
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(transactions)
+      .where(
+        and(
+          eq(transactions.assetId, id),
+          eq(transactions.userId, user.id),
+          inArray(transactions.type, [
+            TRANSACTION_TYPES.INVESTMENT_BUY,
+            TRANSACTION_TYPES.INVESTMENT_SELL,
+          ])
+        )
+      )
+    await tx.delete(assets).where(eq(assets.id, id))
+  })
 
   return {
     success: true,

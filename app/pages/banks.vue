@@ -46,10 +46,10 @@ const handleDelete = async () => {
 
   try {
     await store.deleteBank(bankValue.value.id)
-    showSuccess('Bank został usunięty')
+    showSuccess('Instytucja finansowa została usunięta')
     deleteModalOpen.value = false
   } catch {
-    showError('Nie udało się usunąć banku')
+    showError('Nie udało się usunąć instytucji finansowej')
   } finally {
     await modalCloseAnimation()
     deleteLoading.value = false
@@ -60,7 +60,7 @@ onMounted(async () => {
   try {
     await store.fetchBanks()
   } catch {
-    showError('Nie udało się pobrać listy banków')
+    showError('Nie udało się pobrać listy instytucji finansowych')
   }
 })
 </script>
@@ -68,9 +68,9 @@ onMounted(async () => {
 <template>
   <div>
     <SubHeader
-      :title="`Banki (${store.banks.length})`"
+      :title="`Instytucje finansowe (${store.banks.length})`"
       create-button
-      create-label="Dodaj bank"
+      create-label="Dodaj instytucję finansową"
       :refresh-loading="store.loading"
       @create="openCreateModal"
       @refresh="store.fetchBanks({ force: true })"
@@ -90,7 +90,11 @@ onMounted(async () => {
       :data="filteredBanks"
       :columns="[...columns, actionColumn]"
       :loading="store.loading"
-      :empty="store.loading ? 'Ładowanie...' : 'Brak banków do wyświetlenia'"
+      :empty="
+        store.loading
+          ? 'Ładowanie...'
+          : 'Brak instytucji finansowych do wyświetlenia'
+      "
     />
 
     <!-- MODALS -->
@@ -102,8 +106,8 @@ onMounted(async () => {
 
     <UiConfirmModal
       v-model:open="deleteModalOpen"
-      :title="`Usuń bank '${bankValue?.name ?? ''}'.`"
-      description="Czy na pewno chcesz usunąć ten bank? Tej operacji nie można cofnąć."
+      :title="`Usuń instytucję '${bankValue?.name ?? ''}'.`"
+      description="Czy na pewno chcesz usunąć tę instytucję finansową? Tej operacji nie można cofnąć."
       :loading="deleteLoading"
       @confirm="handleDelete"
     />

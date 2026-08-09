@@ -10,6 +10,11 @@ export const portfolioAssetParamSchema = z.object({
   paId: idFieldSchema,
 })
 
+export const assetSnapshotParamSchema = z.object({
+  id: idFieldSchema,
+  snapshotId: idFieldSchema,
+})
+
 const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),

@@ -61,6 +61,8 @@ export const TRANSACTION_TYPES = {
   TRANSFER: 'transfer',
   LOAN_GIVEN: 'loan_given',
   LOAN_RETURNED: 'loan_returned',
+  INVESTMENT_BUY: 'investment_buy',
+  INVESTMENT_SELL: 'investment_sell',
 } as const satisfies Record<string, AppTransactionType>
 
 export const CATEGORY_TYPES = {

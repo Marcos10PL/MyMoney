@@ -26,6 +26,8 @@ export const TRANSACTION_TYPES_LABELS = {
   loan_given: 'Pożyczka udzielona',
   loan_returned: 'Pożyczka zwrócona',
   transfer: 'Przelew własny',
+  investment_buy: 'Zakup aktywa',
+  investment_sell: 'Sprzedaż aktywa',
 } as const satisfies Record<AppTransactionType, string>
 
 export const TRANSACTION_TYPES_COLORS = {
@@ -34,6 +36,8 @@ export const TRANSACTION_TYPES_COLORS = {
   loan_given: 'info',
   loan_returned: 'secondary',
   transfer: 'neutral',
+  investment_buy: 'warning',
+  investment_sell: 'primary',
 } as const satisfies Record<AppTransactionType, string>
 
 export const ASSET_TYPES_LABELS = {
@@ -90,6 +94,8 @@ export const LINKS = {
   CATEGORIES: '/categories',
   BANKS: '/banks',
   INVESTMENTS: '/investments',
+  PORTFOLIOS: '/investments/portfolios',
+  ASSETS: '/investments/assets',
 } as const
 
 export const ACCOUNT_TYPE_ICONS = {

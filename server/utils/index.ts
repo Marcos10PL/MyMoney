@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { transactions } from '~~/server/db/schema'
+import { assetSnapshots, transactions } from '~~/server/db/schema'
 
 export const getEventContext = (event: H3Event) => {
   return event.context.userSession
@@ -41,10 +41,29 @@ export const computeAccountBalances = async (
       } else {
         balances[acc] += amount
       }
+    } else if (tx.type === TRANSACTION_TYPES.INVESTMENT_BUY) {
+      balances[acc] -= amount
+    } else if (tx.type === TRANSACTION_TYPES.INVESTMENT_SELL) {
+      balances[acc] += amount
     }
   }
 
   return balances
+}
+
+export const upsertAssetSnapshot = async (
+  assetId: string,
+  value: number,
+  date?: string
+): Promise<void> => {
+  const d = date ?? new Date().toISOString().split('T')[0]!
+  await db
+    .insert(assetSnapshots)
+    .values({ assetId, value: String(value), date: d })
+    .onConflictDoUpdate({
+      target: [assetSnapshots.assetId, assetSnapshots.date],
+      set: { value: sql`excluded.value` },
+    })
 }
 
 export const NONE_KEY = '__none__'

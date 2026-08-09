@@ -1,6 +1,13 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { accounts, banks, categories, transactions } from '~~/server/db/schema'
+import {
+  accounts,
+  assets,
+  assetAccounts,
+  banks,
+  categories,
+  transactions,
+} from '~~/server/db/schema'
 
 type DebtInfo = {
   id: string
@@ -12,13 +19,21 @@ type DebtInfo = {
 export default defineEventHandler(async (event) => {
   const { user } = getEventContext(event)
 
-  const [userBanks, userAccounts, userTransactions, userCategories] =
-    await Promise.all([
-      db.select().from(banks).where(eq(banks.userId, user.id)),
-      db.select().from(accounts).where(eq(accounts.userId, user.id)),
-      db.select().from(transactions).where(eq(transactions.userId, user.id)),
-      db.select().from(categories).where(eq(categories.userId, user.id)),
-    ])
+  const [
+    userBanks,
+    userAccounts,
+    userTransactions,
+    userCategories,
+    userAssets,
+    assetAccountLinks,
+  ] = await Promise.all([
+    db.select().from(banks).where(eq(banks.userId, user.id)),
+    db.select().from(accounts).where(eq(accounts.userId, user.id)),
+    db.select().from(transactions).where(eq(transactions.userId, user.id)),
+    db.select().from(categories).where(eq(categories.userId, user.id)),
+    db.select().from(assets).where(eq(assets.userId, user.id)),
+    db.select().from(assetAccounts),
+  ])
 
   const categoriesMap: Record<string, string> = {}
   for (const cat of userCategories) {
@@ -104,6 +119,10 @@ export default defineEventHandler(async (event) => {
       } else {
         stats.balance += amount
       }
+    } else if (tx.type === TRANSACTION_TYPES.INVESTMENT_BUY) {
+      stats.balance -= amount
+    } else if (tx.type === TRANSACTION_TYPES.INVESTMENT_SELL) {
+      stats.balance += amount
     }
   }
 
@@ -137,6 +156,30 @@ export default defineEventHandler(async (event) => {
   )
 
   const totalAmountOwedToMe = debtors.reduce((sum, d) => sum + d.amountToPay, 0)
+
+  const accountBalances: Record<string, number> = {}
+  for (const [id, stats] of Object.entries(accountStatsMap)) {
+    accountBalances[id] = stats.balance
+  }
+
+  const linkedAccountsByAsset = new Map<string, string[]>()
+  for (const link of assetAccountLinks) {
+    const list = linkedAccountsByAsset.get(link.assetId) ?? []
+    list.push(link.accountId)
+    linkedAccountsByAsset.set(link.assetId, list)
+  }
+
+  const totalInvestmentValue = userAssets.reduce((sum, asset) => {
+    const manual = parseFloat(asset.value) || 0
+    if (manual > 0) return sum + manual
+    const linkedIds = linkedAccountsByAsset.get(asset.id) ?? []
+    if (linkedIds.length > 0) {
+      return (
+        sum + linkedIds.reduce((s, id) => s + (accountBalances[id] ?? 0), 0)
+      )
+    }
+    return sum
+  }, 0)
 
   const accountStatsList = Object.values(accountStatsMap)
   const totalBalance = accountStatsList.reduce(
@@ -173,6 +216,8 @@ export default defineEventHandler(async (event) => {
         income: totalIncome,
         expense: totalExpense,
         owed: totalAmountOwedToMe,
+        totalInvestmentValue,
+        netWorth: totalBalance + totalInvestmentValue,
       },
       accounts: accountStatsList,
       debtors,

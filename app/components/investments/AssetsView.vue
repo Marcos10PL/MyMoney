@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { UBadge, UIcon, UiAmount, UiNotesCell, UTooltip } from '#components'
+import {
+  UBadge,
+  UButton,
+  UIcon,
+  UiAmount,
+  UiNotesCell,
+  UTooltip,
+} from '#components'
 import { h } from 'vue'
 
 const props = defineProps<{
@@ -14,22 +21,30 @@ const { showError, showSuccess } = useToasts()
 
 const assetModal = ref(false)
 const deleteAssetModal = ref(false)
+const deleteAssetLoading = ref(false)
+const buyModal = ref(false)
 const selectedAsset = ref<Asset | null>(null)
 
 const openCreateAsset = () => {
   selectedAsset.value = null
   assetModal.value = true
 }
+
 const openEditAsset = (a: Asset) => {
   selectedAsset.value = a
   assetModal.value = true
 }
+
 const openDeleteAsset = (a: Asset) => {
   selectedAsset.value = a
   deleteAssetModal.value = true
 }
 
-const deleteAssetLoading = ref(false)
+const openBuyModal = (a: Asset) => {
+  selectedAsset.value = a
+  buyModal.value = true
+}
+
 const handleDeleteAsset = async () => {
   if (!selectedAsset.value) return
   deleteAssetLoading.value = true
@@ -48,60 +63,145 @@ const handleDeleteAsset = async () => {
   }
 }
 
-const assetColumns = [
-  ...createColumns<Asset>(['name', 'type', 'accounts', 'currentValue'], {
-    type: {
-      mapValue: (_, row) =>
-        h(
-          UBadge,
-          {
-            variant: 'subtle',
-            color: 'neutral',
-            class: 'border',
-            style: {
-              borderColor: `${ASSET_TYPE_COLORS[row.type]}`,
-              opacity: 0.9,
-            },
+const profitClass = (profit: number) =>
+  profit > 0 ? 'text-success' : profit < 0 ? 'text-error' : ''
+
+const router = useRouter()
+
+const navLinkBtn = (to: string, icon: string, tooltip: string) =>
+  h(
+    UTooltip,
+    { text: tooltip },
+    {
+      default: () =>
+        h(UButton, {
+          icon,
+          size: 'xs',
+          variant: 'soft',
+          color: 'neutral',
+          class: 'shrink-0',
+          onClick: () => {
+            router.push(to)
           },
-          ASSET_TYPES_LABELS[row.type]
-        ),
-    },
-    accounts: {
-      mapValue: (_, row) =>
-        row.accounts.length === 0
-          ? '—'
-          : h(UiNotesCell, {
-              text: row.accounts
-                .map((a) => (a.bankName ? `${a.name} (${a.bankName})` : a.name))
-                .join(', '),
-            }),
-    },
-    currentValue: {
-      mapValue: (_, row) => {
-        const free = props.unallocatedMap.get(row.id)
-        const valueEl = h(UiAmount, {
-          value: row.currentValue,
-          options: { includeZero: true },
-        })
-        if (!free) return valueEl
-        return h('div', { class: 'flex items-center gap-1.5' }, [
-          valueEl,
+        }),
+    }
+  )
+
+const profitCell = (
+  value: number,
+  percent: number | null,
+  display: () => string
+) =>
+  percent === null
+    ? h('span', '—')
+    : h('span', { class: profitClass(value) }, display())
+
+const assetColumns = [
+  ...createColumns<Asset>(
+    [
+      'name',
+      'type',
+      'accounts',
+      'currentValue',
+      'costBasis',
+      'profit',
+      'profitPercent',
+    ],
+    {
+      type: {
+        mapValue: (_, row) =>
           h(
-            UTooltip,
-            { text: `${formatCurrency(free)} nieprzydzielone` },
+            UBadge,
             {
-              default: () =>
-                h(UIcon, {
-                  name: 'i-lucide-triangle-alert',
-                  class: 'text-warning shrink-0',
-                }),
-            }
+              variant: 'subtle',
+              color: 'neutral',
+              class: 'border',
+              style: { borderColor: ASSET_TYPE_COLORS[row.type], opacity: 0.9 },
+            },
+            ASSET_TYPES_LABELS[row.type]
           ),
-        ])
       },
-    },
-  }),
+      accounts: {
+        mapValue: (_, row) =>
+          row.accounts.length === 0
+            ? '—'
+            : h(UiNotesCell, {
+                text: row.accounts
+                  .map((a) =>
+                    a.bankName ? `${a.name} (${a.bankName})` : a.name
+                  )
+                  .join(', '),
+              }),
+      },
+      currentValue: {
+        mapValue: (_, row) => {
+          const free = props.unallocatedMap.get(row.id)
+          const warnEl = free
+            ? h(
+                UTooltip,
+                { text: `${formatCurrency(free)} nieprzydzielone` },
+                {
+                  default: () =>
+                    h(UIcon, {
+                      name: 'i-lucide-triangle-alert',
+                      class: 'text-warning shrink-0',
+                    }),
+                }
+              )
+            : null
+          return h(
+            'div',
+            { class: 'flex items-center gap-1.5' },
+            [
+              h(UiAmount, {
+                value: row.currentValue,
+                options: { includeZero: true },
+              }),
+              warnEl,
+              navLinkBtn(
+                `/investments/assets/${row.id}/history`,
+                'i-lucide-history',
+                'Historia wartości'
+              ),
+            ].filter(Boolean)
+          )
+        },
+      },
+      costBasis: {
+        mapValue: (_, row) =>
+          h('div', { class: 'flex items-center gap-1.5' }, [
+            row.costBasis > 0
+              ? h(UiAmount, { value: row.costBasis })
+              : h('span', '—'),
+            navLinkBtn(
+              `/investments/assets/${row.id}/transactions`,
+              'i-lucide-list',
+              'Historia transakcji'
+            ),
+          ]),
+      },
+      profit: {
+        mapValue: (_, row) =>
+          profitCell(row.profit, row.profitPercent, () =>
+            formatCurrency(row.profit)
+          ),
+      },
+      profitPercent: {
+        mapValue: (_, row) =>
+          profitCell(row.profit, row.profitPercent, () => {
+            const sign = row.profitPercent! > 0 ? '+' : ''
+            return `${sign}${formatNumber(row.profitPercent!)}%`
+          }),
+      },
+    }
+  ),
   createActionColumn<Asset>('Akcje', [
+    {
+      icon: 'i-lucide-shopping-cart',
+      tooltip: 'Kup / Sprzedaj',
+      color: 'warning',
+      onClick: openBuyModal,
+    },
     { edit: true, onClick: openEditAsset },
     { delete: true, onClick: openDeleteAsset },
   ]),
@@ -112,12 +212,22 @@ const onAssetSuccess = () => {
   emit('change')
 }
 
-defineExpose({ openCreateAsset })
+const onBuySuccess = () => {
+  buyModal.value = false
+  emit('change')
+}
+
+const table = useTemplateRef('table')
+const columnVisibility = useLocalStorage('table-columns-investments-assets', {})
+
+defineExpose({ openCreateAsset, table, columnVisibility })
 </script>
 
 <template>
   <div class="mt-4">
     <UTable
+      ref="table"
+      v-model:column-visibility="columnVisibility"
       :data="props.assets"
       :columns="assetColumns"
       :loading="props.loading"
@@ -128,6 +238,12 @@ defineExpose({ openCreateAsset })
       v-model:open="assetModal"
       :row="selectedAsset"
       @success="onAssetSuccess"
+    />
+
+    <ModalFormInvestmentBuy
+      v-model:open="buyModal"
+      :preselected-asset-id="selectedAsset?.id"
+      @success="onBuySuccess"
     />
 
     <UiConfirmModal

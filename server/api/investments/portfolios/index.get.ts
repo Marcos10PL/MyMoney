@@ -54,11 +54,13 @@ export default defineEventHandler(async (event) => {
   const currentValueByAsset = new Map<string, number>()
   for (const { assets: asset } of paRows) {
     if (!asset || currentValueByAsset.has(asset.id)) continue
+    const manual = parseFloat(asset.value) || 0
     const linkedIds = linkedAccountIdsByAsset.get(asset.id) ?? []
-    const currentValue =
-      linkedIds.length > 0
-        ? linkedIds.reduce((sum, aid) => sum + (accountBalances[aid] ?? 0), 0)
-        : parseFloat(asset.value) || 0
+    const accountsSum = linkedIds.reduce(
+      (sum, aid) => sum + (accountBalances[aid] ?? 0),
+      0
+    )
+    const currentValue = manual > 0 ? manual : accountsSum
     currentValueByAsset.set(asset.id, currentValue)
   }
 

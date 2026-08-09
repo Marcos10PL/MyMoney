@@ -122,7 +122,15 @@ const onPASuccess = () => {
   refreshAndSyncChart()
 }
 
-defineExpose({ openCreatePortfolio })
+const columnVisibility = useLocalStorage(
+  'table-columns-investments-portfolios',
+  {}
+)
+const firstTable = ref<unknown>(null)
+const setFirstTable = (el: unknown, isFirst: boolean) =>
+  isFirst && (firstTable.value = el)
+
+defineExpose({ openCreatePortfolio, firstTable, columnVisibility })
 
 // ---- columns ----
 type PARow = PortfolioAssetEntry & { _color: string }
@@ -286,6 +294,8 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
         </div>
         <UTable
           v-else
+          :ref="(el) => setFirstTable(el, portfolios.indexOf(portfolio) === 0)"
+          v-model:column-visibility="columnVisibility"
           :data="portfolioEntriesWithColor(portfolio)"
           :columns="makePortfolioAssetColumns(portfolio.id)"
         />

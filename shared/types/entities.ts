@@ -2,6 +2,7 @@ import type { InferSelectModel } from 'drizzle-orm'
 import type {
   accounts,
   assetAccounts,
+  assetSnapshots,
   assets,
   banks,
   categories,
@@ -21,6 +22,7 @@ export type AppAsset = InferSelectModel<typeof assets>
 export type AppAssetAccount = InferSelectModel<typeof assetAccounts>
 export type AppPortfolio = InferSelectModel<typeof portfolios>
 export type AppPortfolioAsset = InferSelectModel<typeof portfolioAssets>
+export type AppAssetSnapshot = InferSelectModel<typeof assetSnapshots>
 
 // enums
 export type AppUserRoles = AppUser['role']

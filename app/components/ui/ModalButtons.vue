@@ -11,7 +11,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="w-full flex justify-end gap-2 ml-auto sm:max-w-44">
+  <div class="w-full flex justify-end gap-2 ml-auto sm:*:w-fit sm:*:px-4">
     <slot>
       <UButton
         variant="subtle"

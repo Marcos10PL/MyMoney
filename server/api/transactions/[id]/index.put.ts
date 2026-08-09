@@ -47,6 +47,8 @@ export default defineEventHandler(async (event) => {
           body.type === TRANSACTION_TYPES.LOAN_RETURNED
             ? body.transactionId
             : null,
+        assetId: body.assetId ?? null,
+        quantity: body.quantity != null ? String(body.quantity) : null,
       })
       .where(and(eq(transactions.id, id), eq(transactions.userId, user.id)))
       .returning()
