@@ -173,10 +173,12 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
       costBasis: { isCurrency: true },
       gain: {
         mapValue: (_, row) =>
-          colorVal(
-            row.gain,
-            `${row.gain >= 0 ? '+' : ''}${formatCurrency(row.gain)}`
-          ),
+          row.gainPercent !== null
+            ? colorVal(
+                row.gain,
+                `${row.gain >= 0 ? '+' : ''}${formatCurrency(row.gain)}`
+              )
+            : h('span', { class: 'text-muted' }, '—'),
       },
       gainPercent: {
         mapValue: (_, row) =>
@@ -188,12 +190,12 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
             : h('span', { class: 'text-muted' }, '—'),
       },
       actualPercent: {
-        mapValue: (_, row) => `${row.actualPercent.toFixed(1)}%`,
+        mapValue: (_, row) => `${formatPercent(row.actualPercent)}%`,
       },
       targetPercent: {
         mapValue: (_, row) =>
           row.targetPercent
-            ? `${parseFloat(row.targetPercent).toFixed(1)}%${row.maxDeviation ? ` ±${parseFloat(row.maxDeviation).toFixed(0)}%` : ''}`
+            ? `${formatPercent(parseFloat(row.targetPercent))}%${row.maxDeviation ? ` ±${formatPercent(parseFloat(row.maxDeviation), 0)}%` : ''}`
             : '—',
       },
       drift: {
@@ -206,7 +208,7 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
                     ? 'text-error font-semibold'
                     : 'text-muted',
                 },
-                `${row.drift > 0 ? '+' : ''}${row.drift.toFixed(1)}%`
+                `${row.drift > 0 ? '+' : ''}${formatPercent(row.drift)}%`
               )
             : h('span', {}, '—'),
       },

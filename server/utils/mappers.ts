@@ -57,6 +57,7 @@ export const mapPortfolioToDTO = (
   }, 0)
 
   let totalCostBasis = 0
+  let totalGain = 0
 
   const assets: PortfolioAssetEntry[] = entries.map(
     ({ pa, asset, currentValue, remainingValue, costBasis }) => {
@@ -67,7 +68,8 @@ export const mapPortfolioToDTO = (
       const proportion = currentValue > 0 ? effectiveValue / currentValue : 1
       const entryCostBasis = proportion * costBasis
       totalCostBasis += entryCostBasis
-      const entryGain = effectiveValue - entryCostBasis
+      const entryGain = entryCostBasis > 0 ? effectiveValue - entryCostBasis : 0
+      totalGain += entryGain
       const entryGainPercent =
         entryCostBasis > 0 ? (entryGain / entryCostBasis) * 100 : null
 
@@ -97,8 +99,6 @@ export const mapPortfolioToDTO = (
       }
     }
   )
-
-  const totalGain = totalValue - totalCostBasis
 
   return {
     id: portfolio.id,

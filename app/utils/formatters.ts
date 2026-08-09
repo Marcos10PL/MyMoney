@@ -37,6 +37,24 @@ export const formatCurrency = (
   }).format(normalized)
 }
 
+export const formatPercent = (value: number, fractionDigits = 1) =>
+  value.toLocaleString('pl-PL', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })
+
+export const formatQuantity = (value?: number | string | null) => {
+  if (value == null) return '--'
+
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(num)) return '--'
+
+  return new Intl.NumberFormat('pl-PL', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  }).format(num)
+}
+
 export const formatDate = (
   date?: string | Date | null,
   options?: { withTime?: boolean }

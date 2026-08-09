@@ -65,6 +65,7 @@ const columns = [
         mapValue: (_, row) => (row.account as { name: string }).name,
       },
       amount: { isCurrency: true },
+      quantity: { mapValue: (val) => formatQuantity(val as string) },
       date: { isDate: true },
     }
   ),
