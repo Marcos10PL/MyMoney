@@ -3,7 +3,9 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const open = defineModel<boolean>({ default: false })
 
-const items = ref<NavigationMenuItem[]>([
+const route = useRoute()
+
+const items = computed<NavigationMenuItem[]>(() => [
   [
     {
       label: 'Dashboard',
@@ -14,6 +16,12 @@ const items = ref<NavigationMenuItem[]>([
       label: 'Transakcje',
       icon: 'i-lucide-credit-card',
       href: LINKS.TRANSACTIONS,
+    },
+    {
+      label: 'Inwestycje',
+      icon: 'i-lucide-trending-up',
+      href: LINKS.PORTFOLIOS,
+      active: route.path.startsWith(LINKS.INVESTMENTS),
     },
   ],
   [
@@ -28,8 +36,8 @@ const items = ref<NavigationMenuItem[]>([
       href: LINKS.CATEGORIES,
     },
     {
-      label: 'Banki',
-      icon: 'i-lucide-dollar-sign',
+      label: 'Instytucje',
+      icon: 'i-lucide-building-2',
       href: LINKS.BANKS,
     },
   ],

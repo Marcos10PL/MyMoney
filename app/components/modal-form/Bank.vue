@@ -36,19 +36,21 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   try {
     if (row) {
       await store.updateBank(row.id, event.data)
-      showSuccess('Bank został zaktualizowany')
+      showSuccess('Instytucja finansowa została zaktualizowana')
     } else {
       await store.createBank(event.data)
-      showSuccess('Bank został dodany')
+      showSuccess('Instytucja finansowa została dodana')
     }
     emit('success')
   } catch (e) {
     const statusCode = returnErrorStatus(e)
     if (statusCode === 409) {
-      showError('Bank o takiej nazwie już istnieje')
+      showError('Instytucja finansowa o takiej nazwie już istnieje')
     } else {
       showError(
-        row ? 'Nie udało się zaktualizować banku' : 'Nie udało się dodać banku'
+        row
+          ? 'Nie udało się zaktualizować instytucji finansowej'
+          : 'Nie udało się dodać instytucji finansowej'
       )
     }
   } finally {
@@ -59,7 +61,10 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="row ? 'Edytuj bank' : 'Dodaj bank'">
+  <UModal
+    v-model:open="open"
+    :title="row ? 'Edytuj instytucję finansową' : 'Dodaj instytucję finansową'"
+  >
     <template #body>
       <UForm
         :schema="bankSchema"
@@ -71,7 +76,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           v-model="state.name"
           name="name"
           label="Nazwa"
-          placeholder="Nazwa banku"
+          placeholder="Nazwa instytucji finansowej"
           autofocus
         />
         <UiModalButtons

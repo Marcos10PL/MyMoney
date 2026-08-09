@@ -125,7 +125,7 @@ const onSubmit = async (
           :rows="3"
         />
 
-        <UFormField name="bankId" label="Bank">
+        <UFormField name="bankId" label="Instytucja (opcjonalnie)">
           <SelectsBanks v-model="state.bankId" clearable class="w-full" />
         </UFormField>
 
@@ -139,6 +139,7 @@ const onSubmit = async (
             :step="0.01"
             :min="0"
             :max="100"
+            :format-options="{ maximumFractionDigits: 2 }"
           />
         </div>
 

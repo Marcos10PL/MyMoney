@@ -28,7 +28,7 @@ const displayModel = computed({
   <UiSelectMenu
     v-model="displayModel"
     :items="items"
-    placeholder="Wybierz bank..."
+    placeholder="Wybierz instytucję finansową..."
     :loading="store.loading"
     :clearable
   />

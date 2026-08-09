@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { transactions } from '~~/server/db/schema'
+import { assetSnapshots, assets, transactions } from '~~/server/db/schema'
 import { createTransactionBodySchema } from '~~/server/schema/body'
 
 export default defineEventHandler(async (event) => {
@@ -44,6 +44,8 @@ export default defineEventHandler(async (event) => {
         body.type === TRANSACTION_TYPES.LOAN_RETURNED
           ? body.transactionId
           : null,
+      assetId: body.assetId ?? null,
+      quantity: body.quantity != null ? String(body.quantity) : null,
     })
 
     if (body.toAccountId) {
@@ -60,6 +62,25 @@ export default defineEventHandler(async (event) => {
         date: new Date(body.date),
         transactionId: null,
       })
+    }
+
+    if (body.marketValue && body.assetId) {
+      const snapshotDate = new Date(body.date).toISOString().split('T')[0]!
+      await tx
+        .insert(assetSnapshots)
+        .values({
+          assetId: body.assetId,
+          value: String(body.marketValue),
+          date: snapshotDate,
+        })
+        .onConflictDoUpdate({
+          target: [assetSnapshots.assetId, assetSnapshots.date],
+          set: { value: String(body.marketValue) },
+        })
+      await tx
+        .update(assets)
+        .set({ value: String(body.marketValue) })
+        .where(and(eq(assets.id, body.assetId), eq(assets.userId, user.id)))
     }
   })
 

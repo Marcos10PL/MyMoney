@@ -1,5 +1,6 @@
 import z from 'zod'
 import {
+  decimalFieldSchema,
   idFieldSchema,
   loginFieldSchema,
   passwordFieldSchema,
@@ -43,12 +44,10 @@ export const accountSchema = z
 
     type: z.enum(ACCOUNT_TYPES).default(ACCOUNT_TYPES.CHECKING!),
 
-    percentage: z
-      .number()
-      .min(VALIDATION.PERCENTAGE_MIN)
-      .max(VALIDATION.PERCENTAGE_MAX)
-      .multipleOf(0.01)
-      .optional(),
+    percentage: decimalFieldSchema(
+      VALIDATION.PERCENTAGE_MIN,
+      VALIDATION.PERCENTAGE_MAX
+    ).optional(),
 
     isFree: z.boolean().default(false),
     isActive: z.boolean().default(true),
@@ -99,11 +98,7 @@ export const transactionSchema = z
       .or(z.literal('')),
 
     type: z.enum(TRANSACTION_TYPES),
-    amount: z
-      .number('Kwota jest wymagana')
-      .positive()
-      .multipleOf(0.01)
-      .max(VALIDATION.TRANSACTION_AMOUNT_MAX),
+    amount: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
     description: textFieldSchema(
       VALIDATION.TRANSACTION_DESCRIPTION_MIN_LENGTH,
       VALIDATION.TRANSACTION_DESCRIPTION_MAX_LENGTH
@@ -154,7 +149,68 @@ export const transactionSchema = z
     }
   })
 
+export const assetSchema = z.object({
+  accountIds: z.array(idFieldSchema).default([]),
+  name: textFieldSchema(VALIDATION.ASSET_NAME_MIN, VALIDATION.ASSET_NAME_MAX),
+  type: z.enum(ASSET_TYPES),
+  value: decimalFieldSchema(0, VALIDATION.TRANSACTION_AMOUNT_MAX),
+  currency: z.string().trim().length(3).default('PLN'),
+  description: textFieldSchema(1, VALIDATION.ASSET_DESCRIPTION_MAX)
+    .optional()
+    .or(z.literal('')),
+})
+
+export const portfolioSchema = z.object({
+  name: textFieldSchema(
+    VALIDATION.PORTFOLIO_NAME_MIN,
+    VALIDATION.PORTFOLIO_NAME_MAX
+  ),
+  description: textFieldSchema(1, VALIDATION.PORTFOLIO_DESCRIPTION_MAX)
+    .optional()
+    .or(z.literal('')),
+})
+
+export const portfolioAssetSchema = z.object({
+  assetId: idFieldSchema,
+  allocatedAmount: decimalFieldSchema().optional().nullable(),
+  targetPercent: decimalFieldSchema(0, 100).optional().nullable(),
+  maxDeviation: decimalFieldSchema(0, 100).optional().nullable(),
+})
+
+export const investmentBuySchema = z.object({
+  assetId: idFieldSchema,
+  accountId: idFieldSchema,
+  amount: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
+  quantity: decimalFieldSchema(0.000001, 999999999).optional().nullable(),
+  date: z.iso.datetime('Data jest wymagana'),
+  name: textFieldSchema(
+    VALIDATION.TRANSACTION_NAME_MIN_LENGTH,
+    VALIDATION.TRANSACTION_NAME_MAX_LENGTH
+  ).optional(),
+  description: textFieldSchema(
+    VALIDATION.TRANSACTION_DESCRIPTION_MIN_LENGTH,
+    VALIDATION.TRANSACTION_DESCRIPTION_MAX_LENGTH
+  )
+    .optional()
+    .or(z.literal('')),
+  type: z
+    .enum([
+      TRANSACTION_TYPES.INVESTMENT_BUY!,
+      TRANSACTION_TYPES.INVESTMENT_SELL!,
+    ])
+    .default(TRANSACTION_TYPES.INVESTMENT_BUY!),
+})
+
+export const assetSnapshotSchema = z.object({
+  value: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
+  date: z.iso.date().optional(),
+})
+
 // --- TYPES ---
 export type BankBody = z.infer<typeof bankSchema>
 export type CategoryBody = z.infer<typeof categorySchema>
 export type AccountBody = z.infer<typeof accountSchema>
+export type AssetBody = z.infer<typeof assetSchema>
+export type PortfolioBody = z.infer<typeof portfolioSchema>
+export type PortfolioAssetBody = z.infer<typeof portfolioAssetSchema>
+export type InvestmentBuyBody = z.infer<typeof investmentBuySchema>

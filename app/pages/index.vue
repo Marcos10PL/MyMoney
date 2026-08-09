@@ -3,7 +3,7 @@ const { data, pending } = useLazyFetch('/api/stats', {
   transform: (res) => res.data,
 })
 
-const initialTotals = { balance: 0, income: 0, expense: 0, owed: 0 }
+const initialTotals = { balance: 0, income: 0, expense: 0, owed: 0, totalInvestmentValue: 0, netWorth: 0 }
 
 const percent = (value: number, total: number) => {
   if (total === 0) return 0
@@ -68,6 +68,8 @@ const accountsWithPercents = computed(() =>
         :loan-percent="loanPercent"
         :net-positive="netPositive"
         :loading="pending"
+        :total-investment-value="totals.totalInvestmentValue"
+        :net-worth="totals.netWorth"
       />
 
       <div class="flex flex-col gap-4">

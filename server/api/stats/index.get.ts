@@ -1,6 +1,12 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
-import { accounts, banks, categories, transactions } from '~~/server/db/schema'
+import {
+  accounts,
+  assets,
+  banks,
+  categories,
+  transactions,
+} from '~~/server/db/schema'
 
 type DebtInfo = {
   id: string
@@ -12,13 +18,19 @@ type DebtInfo = {
 export default defineEventHandler(async (event) => {
   const { user } = getEventContext(event)
 
-  const [userBanks, userAccounts, userTransactions, userCategories] =
-    await Promise.all([
-      db.select().from(banks).where(eq(banks.userId, user.id)),
-      db.select().from(accounts).where(eq(accounts.userId, user.id)),
-      db.select().from(transactions).where(eq(transactions.userId, user.id)),
-      db.select().from(categories).where(eq(categories.userId, user.id)),
-    ])
+  const [
+    userBanks,
+    userAccounts,
+    userTransactions,
+    userCategories,
+    userAssets,
+  ] = await Promise.all([
+    db.select().from(banks).where(eq(banks.userId, user.id)),
+    db.select().from(accounts).where(eq(accounts.userId, user.id)),
+    db.select().from(transactions).where(eq(transactions.userId, user.id)),
+    db.select().from(categories).where(eq(categories.userId, user.id)),
+    db.select().from(assets).where(eq(assets.userId, user.id)),
+  ])
 
   const categoriesMap: Record<string, string> = {}
   for (const cat of userCategories) {
@@ -104,6 +116,10 @@ export default defineEventHandler(async (event) => {
       } else {
         stats.balance += amount
       }
+    } else if (tx.type === TRANSACTION_TYPES.INVESTMENT_BUY) {
+      stats.balance -= amount
+    } else if (tx.type === TRANSACTION_TYPES.INVESTMENT_SELL) {
+      stats.balance += amount
     }
   }
 
@@ -137,6 +153,13 @@ export default defineEventHandler(async (event) => {
   )
 
   const totalAmountOwedToMe = debtors.reduce((sum, d) => sum + d.amountToPay, 0)
+
+  // Only count assets with manually-set market values.
+  // Assets valued via linked accounts are already included in totalBalance.
+  const totalInvestmentValue = userAssets.reduce((sum, asset) => {
+    const manual = parseFloat(asset.value) || 0
+    return manual > 0 ? sum + manual : sum
+  }, 0)
 
   const accountStatsList = Object.values(accountStatsMap)
   const totalBalance = accountStatsList.reduce(
@@ -173,6 +196,8 @@ export default defineEventHandler(async (event) => {
         income: totalIncome,
         expense: totalExpense,
         owed: totalAmountOwedToMe,
+        totalInvestmentValue,
+        netWorth: totalBalance + totalInvestmentValue,
       },
       accounts: accountStatsList,
       debtors,

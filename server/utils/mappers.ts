@@ -1,6 +1,122 @@
+export const mapAssetToDTO = (
+  asset: AppAsset,
+  linkedAccounts: Array<AppAccount & { bankName: string | null }>,
+  accountBalances: Record<string, number>,
+  costBasis = 0
+): Asset => {
+  const manual = parseFloat(asset.value) || 0
+  const accountsSum =
+    linkedAccounts.length > 0
+      ? linkedAccounts.reduce(
+          (sum, acc) => sum + (accountBalances[acc.id] ?? 0),
+          0
+        )
+      : 0
+  const currentValue =
+    manual > 0 ? manual : accountsSum > 0 ? accountsSum : costBasis
+
+  const profit = costBasis > 0 ? currentValue - costBasis : 0
+  const profitPercent = costBasis > 0 ? (profit / costBasis) * 100 : null
+
+  return {
+    id: asset.id,
+    name: asset.name,
+    type: asset.type,
+    currency: asset.currency,
+    description: asset.description,
+    createdAt: new Date(asset.createdAt),
+    updatedAt: new Date(asset.updatedAt),
+    accounts: linkedAccounts.map((a) => ({
+      id: a.id,
+      name: a.name,
+      bankName: a.bankName,
+    })),
+    currentValue,
+    costBasis,
+    profit,
+    profitPercent,
+  }
+}
+
+export const mapPortfolioToDTO = (
+  portfolio: AppPortfolio,
+  entries: Array<{
+    pa: AppPortfolioAsset
+    asset: AppAsset
+    currentValue: number
+    remainingValue: number
+    costBasis: number
+  }>
+): Portfolio => {
+  const totalValue = entries.reduce((sum, { pa, remainingValue }) => {
+    const effective =
+      pa.allocatedAmount !== null
+        ? parseFloat(pa.allocatedAmount) || 0
+        : remainingValue
+    return sum + effective
+  }, 0)
+
+  let totalCostBasis = 0
+
+  const assets: PortfolioAssetEntry[] = entries.map(
+    ({ pa, asset, currentValue, remainingValue, costBasis }) => {
+      const effectiveValue =
+        pa.allocatedAmount !== null
+          ? parseFloat(pa.allocatedAmount) || 0
+          : remainingValue
+      const proportion = currentValue > 0 ? effectiveValue / currentValue : 1
+      const entryCostBasis = proportion * costBasis
+      totalCostBasis += entryCostBasis
+      const entryGain = effectiveValue - entryCostBasis
+      const entryGainPercent =
+        entryCostBasis > 0 ? (entryGain / entryCostBasis) * 100 : null
+
+      const actualPercent =
+        totalValue > 0 ? (effectiveValue / totalValue) * 100 : 0
+      const target =
+        pa.targetPercent !== null ? parseFloat(pa.targetPercent) : null
+      const maxDev =
+        pa.maxDeviation !== null ? parseFloat(pa.maxDeviation) : null
+      const drift = target !== null ? actualPercent - target : null
+      const isDrifting =
+        drift !== null && maxDev !== null && Math.abs(drift) > maxDev
+
+      return {
+        id: pa.id,
+        asset: { id: asset.id, name: asset.name, type: asset.type },
+        allocatedAmount: pa.allocatedAmount,
+        targetPercent: pa.targetPercent,
+        maxDeviation: pa.maxDeviation,
+        effectiveValue,
+        costBasis: entryCostBasis,
+        gain: entryGain,
+        gainPercent: entryGainPercent,
+        actualPercent,
+        drift,
+        isDrifting,
+      }
+    }
+  )
+
+  const totalGain = totalValue - totalCostBasis
+
+  return {
+    id: portfolio.id,
+    name: portfolio.name,
+    description: portfolio.description,
+    createdAt: new Date(portfolio.createdAt),
+    updatedAt: new Date(portfolio.updatedAt),
+    assets,
+    totalValue,
+    totalCostBasis,
+    totalGain,
+  }
+}
+
 export const mapAccountToDTO = (
   account: AppAccount,
-  bank: AppBank | null
+  bank: AppBank | null,
+  balance = 0
 ): Account => {
   return {
     id: account.id,
@@ -22,6 +138,7 @@ export const mapAccountToDTO = (
       ? new Date(account.durationEndDate)
       : null,
     isActive: account.isActive,
+    balance,
   }
 }
 
@@ -45,12 +162,14 @@ export const mapTransactionToDTO = (
   account: AppAccount,
   category: AppCategory | null,
   toAccount: AppAccount | null,
-  transaction: AppTransaction | null
+  transaction: AppTransaction | null,
+  asset: AppAsset | null = null
 ): Transaction => {
   return {
     id: tx.id,
     type: tx.type,
     amount: tx.amount,
+    quantity: tx.quantity,
     description: tx.description,
     name: tx.name,
     counterparty: tx.counterparty,
@@ -80,6 +199,12 @@ export const mapTransactionToDTO = (
       ? {
           id: transaction.id,
           name: transaction.name,
+        }
+      : null,
+    asset: asset
+      ? {
+          id: asset.id,
+          name: asset.name,
         }
       : null,
   }

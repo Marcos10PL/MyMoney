@@ -11,6 +11,7 @@ import {
 import { users } from './users'
 import { accounts } from './accounts'
 import { categories } from './categories'
+import { assets } from './assets'
 
 export const transactionTypeEnum = pgEnum('transaction_type', [
   'income',
@@ -18,6 +19,8 @@ export const transactionTypeEnum = pgEnum('transaction_type', [
   'transfer',
   'loan_given',
   'loan_returned',
+  'investment_buy',
+  'investment_sell',
 ])
 
 export const transactions = pgTable(
@@ -53,6 +56,12 @@ export const transactions = pgTable(
     // for loan_given / loan_returned
     counterparty: text('counterparty'),
 
+    // for investment_buy / investment_sell
+    assetId: uuid('asset_id').references((): AnyPgColumn => assets.id, {
+      onDelete: 'set null',
+    }),
+    quantity: numeric('quantity', { precision: 15, scale: 6 }),
+
     type: transactionTypeEnum('type').notNull(),
     amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
     description: text('description'),
@@ -73,5 +82,6 @@ export const transactions = pgTable(
     index('transactions_category_id_idx').on(t.categoryId),
     index('transactions_date_idx').on(t.date),
     index('transactions_type_idx').on(t.type),
+    index('transactions_asset_id_idx').on(t.assetId),
   ]
 )

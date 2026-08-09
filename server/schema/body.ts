@@ -4,7 +4,9 @@ import {
   passwordFieldSchema,
   idFieldSchema,
   textFieldSchema,
+  decimalFieldSchema,
 } from './fields'
+import { ASSET_TYPES } from '~~/shared/utils/const'
 
 export const loginBodySchema = z.object({
   login: loginFieldSchema,
@@ -28,12 +30,10 @@ export const createAccountBodySchema = z
 
     type: z.enum(ACCOUNT_TYPES).default(ACCOUNT_TYPES.CHECKING!),
 
-    percentage: z
-      .number()
-      .min(VALIDATION.PERCENTAGE_MIN)
-      .max(VALIDATION.PERCENTAGE_MAX)
-      .multipleOf(0.01)
-      .optional(),
+    percentage: decimalFieldSchema(
+      VALIDATION.PERCENTAGE_MIN,
+      VALIDATION.PERCENTAGE_MAX
+    ).optional(),
 
     isFree: z.boolean().default(false),
     isActive: z.boolean().default(true),
@@ -97,11 +97,7 @@ export const createTransactionBodySchema = z
       .transform((val) => (val === '' ? null : val)),
 
     type: z.enum(TRANSACTION_TYPES),
-    amount: z
-      .number()
-      .positive()
-      .multipleOf(0.01)
-      .max(VALIDATION.TRANSACTION_AMOUNT_MAX),
+    amount: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
     description: textFieldSchema(
       VALIDATION.TRANSACTION_DESCRIPTION_MIN_LENGTH,
       VALIDATION.TRANSACTION_DESCRIPTION_MAX_LENGTH
@@ -110,6 +106,10 @@ export const createTransactionBodySchema = z
       .or(z.literal(''))
       .transform((val) => (val === '' ? null : val)),
     date: z.iso.datetime(),
+
+    assetId: idFieldSchema.optional().nullable(),
+    quantity: z.number().positive().optional().nullable(),
+    marketValue: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX).optional().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.type === TRANSACTION_TYPES.TRANSFER && !data.toAccountId) {
@@ -148,6 +148,17 @@ export const createTransactionBodySchema = z
         path: ['transactionId'],
       })
     }
+    if (
+      (data.type === TRANSACTION_TYPES.INVESTMENT_BUY ||
+        data.type === TRANSACTION_TYPES.INVESTMENT_SELL) &&
+      !data.assetId
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Asset is required for investment transactions',
+        path: ['assetId'],
+      })
+    }
   })
   .transform((data) => {
     if (
@@ -156,9 +167,14 @@ export const createTransactionBodySchema = z
     ) {
       data.categoryId = null
     }
-
     if (data.type !== TRANSACTION_TYPES.TRANSFER) data.toAccountId = null
-
+    if (
+      data.type !== TRANSACTION_TYPES.INVESTMENT_BUY &&
+      data.type !== TRANSACTION_TYPES.INVESTMENT_SELL
+    ) {
+      data.assetId = null
+      data.quantity = null
+    }
     return data
   })
 
@@ -167,7 +183,7 @@ export const updateTransactionBodySchema =
     if (data.type === TRANSACTION_TYPES.TRANSFER) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Updating transaction type to transfer is not allowed',
+        message: 'Updating transaction type to this type is not allowed',
         path: ['type'],
       })
     }
@@ -183,3 +199,46 @@ export const createCategoryBodySchema = z.object({
 })
 
 export const updateCategoryBodySchema = createCategoryBodySchema
+
+export const createAssetBodySchema = z.object({
+  accountIds: z.array(idFieldSchema).default([]),
+  name: textFieldSchema(VALIDATION.ASSET_NAME_MIN, VALIDATION.ASSET_NAME_MAX),
+  type: z.enum(ASSET_TYPES),
+  value: decimalFieldSchema(0, VALIDATION.TRANSACTION_AMOUNT_MAX).default(0),
+  currency: z.string().trim().length(3).default('PLN'),
+  description: textFieldSchema(1, VALIDATION.ASSET_DESCRIPTION_MAX)
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? null : val)),
+})
+
+export const updateAssetBodySchema = createAssetBodySchema
+
+export const createPortfolioBodySchema = z.object({
+  name: textFieldSchema(
+    VALIDATION.PORTFOLIO_NAME_MIN,
+    VALIDATION.PORTFOLIO_NAME_MAX
+  ),
+  description: textFieldSchema(1, VALIDATION.PORTFOLIO_DESCRIPTION_MAX)
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? null : val)),
+})
+
+export const updatePortfolioBodySchema = createPortfolioBodySchema
+
+export const addPortfolioAssetBodySchema = z.object({
+  assetId: idFieldSchema,
+  allocatedAmount: decimalFieldSchema().optional().nullable(),
+  targetPercent: decimalFieldSchema(0, 100).optional().nullable(),
+  maxDeviation: decimalFieldSchema(0, 100).optional().nullable(),
+})
+
+export const updatePortfolioAssetBodySchema = addPortfolioAssetBodySchema.omit({
+  assetId: true,
+})
+
+export const assetSnapshotBodySchema = z.object({
+  value: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
+  date: z.iso.date().optional(),
+})

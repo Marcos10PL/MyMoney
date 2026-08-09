@@ -31,7 +31,7 @@ export const formatCurrency = (
     style: 'currency',
     currency,
     ...(fractionDigits != null && {
-      minimumFractionDigits: 2,
+      minimumFractionDigits: Math.min(2, fractionDigits),
       maximumFractionDigits: fractionDigits,
     }),
   }).format(normalized)

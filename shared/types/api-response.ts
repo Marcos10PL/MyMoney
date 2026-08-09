@@ -28,6 +28,8 @@ export type StatsResponse = APIResponse<{
     income: number
     expense: number
     owed: number
+    totalInvestmentValue: number
+    netWorth: number
   }
   accounts: AccountStats[]
   debtors: Debtor[]

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-defineProps<{ text: string }>()
+defineProps<{ text: string; tooltip?: string }>()
 </script>
 
 <template>
   <UPopover :content="{ align: 'end' }" :ui="{ content: 'max-w-screen' }">
-    <UTooltip text="Pokaż">
+    <UTooltip :text="tooltip || 'Pokaż'">
       <UButton
         color="neutral"
         variant="outline"
