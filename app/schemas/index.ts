@@ -175,6 +175,7 @@ export const portfolioAssetSchema = z.object({
   allocatedAmount: decimalFieldSchema().optional().nullable(),
   targetPercent: decimalFieldSchema(0, 100).optional().nullable(),
   maxDeviation: decimalFieldSchema(0, 100).optional().nullable(),
+  gainWeight: decimalFieldSchema(0, 100).optional().nullable(),
 })
 
 export const investmentBuySchema = z.object({

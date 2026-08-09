@@ -52,6 +52,8 @@ export const portfolioAssets = pgTable(
     targetPercent: numeric('target_percent', { precision: 5, scale: 2 }),
     // acceptable deviation in percentage points, e.g. 3 means ±3%
     maxDeviation: numeric('max_deviation', { precision: 5, scale: 2 }),
+    // explicit gain attribution weight (0-100); null = proportional to effectiveValue/currentValue
+    gainWeight: numeric('gain_weight', { precision: 5, scale: 2 }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()

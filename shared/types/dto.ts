@@ -39,7 +39,7 @@ export type Asset = Omit<AppAsset, 'userId' | 'value'> & {
 
 export type PortfolioAssetEntry = Pick<
   AppPortfolioAsset,
-  'id' | 'allocatedAmount' | 'targetPercent' | 'maxDeviation'
+  'id' | 'allocatedAmount' | 'targetPercent' | 'maxDeviation' | 'gainWeight'
 > & {
   asset: Pick<AppAsset, 'id' | 'name' | 'type'>
   effectiveValue: number

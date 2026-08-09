@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
   }
 
   await validateAllocation(body.assetId, body.allocatedAmount ?? null, user.id)
+  await validateGainWeight(body.assetId, body.gainWeight ?? null)
 
   await db.insert(portfolioAssets).values({
     portfolioId,
@@ -43,6 +44,7 @@ export default defineEventHandler(async (event) => {
     targetPercent:
       body.targetPercent != null ? String(body.targetPercent) : null,
     maxDeviation: body.maxDeviation != null ? String(body.maxDeviation) : null,
+    gainWeight: body.gainWeight != null ? String(body.gainWeight) : null,
   })
 
   return {

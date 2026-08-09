@@ -24,6 +24,7 @@ const setDefaults = (): Schema => ({
   targetPercent:
     row?.targetPercent != null ? parseFloat(row.targetPercent) : null,
   maxDeviation: row?.maxDeviation != null ? parseFloat(row.maxDeviation) : null,
+  gainWeight: row?.gainWeight != null ? parseFloat(row.gainWeight) : null,
 })
 
 const state = reactive<Schema>(setDefaults())
@@ -46,10 +47,10 @@ const allocatedElsewhere = computed(() => {
     }
   }
 
-  if (!hasNullOther || !row) return explicit
+  if (!hasNullOther) return explicit
 
   const selfStored =
-    row.allocatedAmount != null ? parseFloat(row.allocatedAmount) : 0
+    row?.allocatedAmount != null ? parseFloat(row.allocatedAmount) : 0
   const nullEffective = Math.max(
     0,
     assetCurrentValue.value - explicit - selfStored
@@ -87,6 +88,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
             allocatedAmount: event.data.allocatedAmount ?? null,
             targetPercent: event.data.targetPercent ?? null,
             maxDeviation: event.data.maxDeviation ?? null,
+            gainWeight: event.data.gainWeight ?? null,
           },
         }
       )
@@ -104,7 +106,12 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     if (status === 409) {
       showError('To aktywo jest już w tym portfelu')
     } else if (status === 422) {
-      showError('Suma alokacji przekracza wartość aktywa')
+      const msg = (e as { data?: { message?: string } })?.data?.message ?? ''
+      if (msg.includes('gain weight')) {
+        showError('Suma udziałów w zysku przekracza 100%')
+      } else {
+        showError('Suma alokacji przekracza wartość aktywa')
+      }
     } else {
       showError('Nie udało się zapisać')
     }
@@ -216,6 +223,17 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
             placeholder="np. 3"
           />
         </div>
+
+        <UiInputNumber
+          v-model="state.gainWeight"
+          name="gainWeight"
+          label="Udział w zysku % (opcjonalnie)"
+          :required="false"
+          :min="0"
+          :max="100"
+          :format-options="{ maximumFractionDigits: 2 }"
+          placeholder="puste = proporcjonalnie do wartości"
+        />
 
         <UiModalButtons
           :label="row ? 'Zapisz' : 'Dodaj'"

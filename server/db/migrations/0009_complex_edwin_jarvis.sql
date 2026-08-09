@@ -1,0 +1,1 @@
+ALTER TABLE "portfolio_assets" ADD COLUMN "gain_weight" numeric(5, 2);

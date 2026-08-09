@@ -109,7 +109,9 @@ export const createTransactionBodySchema = z
 
     assetId: idFieldSchema.optional().nullable(),
     quantity: z.number().positive().optional().nullable(),
-    marketValue: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX).optional().nullable(),
+    marketValue: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX)
+      .optional()
+      .nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.type === TRANSACTION_TYPES.TRANSFER && !data.toAccountId) {
@@ -232,6 +234,7 @@ export const addPortfolioAssetBodySchema = z.object({
   allocatedAmount: decimalFieldSchema().optional().nullable(),
   targetPercent: decimalFieldSchema(0, 100).optional().nullable(),
   maxDeviation: decimalFieldSchema(0, 100).optional().nullable(),
+  gainWeight: decimalFieldSchema(0, 100).optional().nullable(),
 })
 
 export const updatePortfolioAssetBodySchema = addPortfolioAssetBodySchema.omit({

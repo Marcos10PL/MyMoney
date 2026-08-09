@@ -171,6 +171,40 @@ export const validateAllocation = async (
   }
 }
 
+export const validateGainWeight = async (
+  assetId: string,
+  gainWeight: number | null,
+  excludePaId?: string
+): Promise<void> => {
+  if (gainWeight == null) return
+
+  const [sumResult] = await db
+    .select({
+      existingSum: sql<string>`coalesce(sum(${portfolioAssets.gainWeight}), '0')`,
+    })
+    .from(portfolioAssets)
+    .where(
+      excludePaId
+        ? and(
+            eq(portfolioAssets.assetId, assetId),
+            isNotNull(portfolioAssets.gainWeight),
+            ne(portfolioAssets.id, excludePaId)
+          )
+        : and(
+            eq(portfolioAssets.assetId, assetId),
+            isNotNull(portfolioAssets.gainWeight)
+          )
+    )
+
+  const existingSum = parseFloat(sumResult?.existingSum ?? '0')
+  if (existingSum + gainWeight > 100 + 0.005) {
+    throw createError({
+      statusCode: 422,
+      message: 'Total gain weight across portfolios cannot exceed 100%',
+    })
+  }
+}
+
 export const NONE_KEY = '__none__'
 
 export const categoryStats = (

@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
     user.id,
     paId
   )
+  await validateGainWeight(pa.assetId, body.gainWeight ?? null, paId)
 
   await db
     .update(portfolioAssets)
@@ -34,6 +35,7 @@ export default defineEventHandler(async (event) => {
         body.targetPercent != null ? String(body.targetPercent) : null,
       maxDeviation:
         body.maxDeviation != null ? String(body.maxDeviation) : null,
+      gainWeight: body.gainWeight != null ? String(body.gainWeight) : null,
     })
     .where(eq(portfolioAssets.id, paId))
 

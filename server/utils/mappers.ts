@@ -66,9 +66,18 @@ export const mapPortfolioToDTO = (
           ? parseFloat(pa.allocatedAmount) || 0
           : remainingValue
       const proportion = currentValue > 0 ? effectiveValue / currentValue : 1
-      const entryCostBasis = proportion * costBasis
+      let entryCostBasis: number
+      let entryGain: number
+      if (pa.gainWeight !== null) {
+        const w = Math.max(0, Math.min(100, parseFloat(pa.gainWeight))) / 100
+        const totalAssetGain = costBasis > 0 ? currentValue - costBasis : 0
+        entryCostBasis = w * costBasis
+        entryGain = w * totalAssetGain
+      } else {
+        entryCostBasis = proportion * costBasis
+        entryGain = entryCostBasis > 0 ? effectiveValue - entryCostBasis : 0
+      }
       totalCostBasis += entryCostBasis
-      const entryGain = entryCostBasis > 0 ? effectiveValue - entryCostBasis : 0
       totalGain += entryGain
       const entryGainPercent =
         entryCostBasis > 0 ? (entryGain / entryCostBasis) * 100 : null
@@ -89,6 +98,7 @@ export const mapPortfolioToDTO = (
         allocatedAmount: pa.allocatedAmount,
         targetPercent: pa.targetPercent,
         maxDeviation: pa.maxDeviation,
+        gainWeight: pa.gainWeight,
         effectiveValue,
         costBasis: entryCostBasis,
         gain: entryGain,
