@@ -18,5 +18,5 @@ export const textFieldSchema = (min: number, max: number) =>
 
 export const decimalFieldSchema = (min = 0, max?: number) =>
   (max != null ? z.number().min(min).max(max) : z.number().min(min)).refine(
-    (v) => Math.round(v * 100) === v * 100
+    (v) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-9
   )
