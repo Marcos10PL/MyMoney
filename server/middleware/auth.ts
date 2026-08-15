@@ -4,7 +4,8 @@ export default defineEventHandler(async (event) => {
   const isAuthAction =
     event.path.startsWith('/api/auth') ||
     event.path.startsWith('/api/_') ||
-    event.path.startsWith('/api/public')
+    event.path.startsWith('/api/public') ||
+    event.path.startsWith('/api/mcp')
 
   if (isApi && !isAuthAction) {
     const session = await getUserSession(event)

@@ -1,120 +1,15 @@
-import { alias } from 'drizzle-orm/pg-core'
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  getTableColumns,
-  gte,
-  ilike,
-  inArray,
-  lte,
-  sql,
-  sum,
-} from 'drizzle-orm'
-import { db } from '~~/server/db/conn'
-import { accounts, assets, categories, transactions } from '~~/server/db/schema'
 import { transactionsQuerySchema } from '~~/server/schema/query'
-
-const toAccounts = alias(accounts, 'to_accounts')
-const tx = alias(transactions, 'tx')
 
 export default defineEventHandler(async (event) => {
   const { user } = getEventContext(event)
-  const { page, limit, search, sortBy, sortOrder, ...filters } =
-    await getValidatedQuery(event, transactionsQuerySchema.parse)
-
-  const conditions = [eq(transactions.userId, user.id)]
-
-  if (search) {
-    conditions.push(ilike(transactions.name, `%${search}%`))
-  }
-
-  if (filters.accountIds && filters.accountIds.length > 0) {
-    conditions.push(inArray(transactions.accountId, filters.accountIds))
-  }
-
-  if (filters.categoryIds && filters.categoryIds.length > 0) {
-    conditions.push(inArray(transactions.categoryId, filters.categoryIds))
-  }
-
-  if (filters.dateFrom) {
-    conditions.push(gte(transactions.date, new Date(filters.dateFrom)))
-  }
-
-  if (filters.dateTo) {
-    conditions.push(lte(transactions.date, new Date(filters.dateTo)))
-  }
-
-  if (filters.type) {
-    conditions.push(eq(transactions.type, filters.type))
-  }
-
-  let orderBy
-  if (sortBy) {
-    const columns = getTableColumns(transactions)
-
-    if (sortBy in columns) {
-      const column = columns[sortBy as keyof typeof columns]
-      orderBy = sortOrder === 'desc' ? desc(column) : asc(column)
-    }
-  }
-
-  const [countResult, sumsResult, items] = await Promise.all([
-    db
-      .select({ total: count() })
-      .from(transactions)
-      .where(and(...conditions)),
-    db
-      .select({
-        incomeSum: sum(
-          sql`CASE WHEN ${transactions.type} = 'income' AND ${transactions.categoryId} IS NOT NULL THEN ${transactions.amount}::numeric ELSE 0 END`
-        ),
-        expenseSum: sum(
-          sql`CASE WHEN ${transactions.type} = 'expense' AND ${transactions.categoryId} IS NOT NULL THEN ${transactions.amount}::numeric ELSE 0 END`
-        ),
-      })
-      .from(transactions)
-      .where(and(...conditions)),
-    db
-      .select()
-      .from(transactions)
-      .innerJoin(accounts, eq(transactions.accountId, accounts.id))
-      .leftJoin(categories, eq(transactions.categoryId, categories.id))
-      .leftJoin(toAccounts, eq(transactions.toAccountId, toAccounts.id))
-      .leftJoin(tx, eq(transactions.transactionId, tx.id))
-      .leftJoin(assets, eq(transactions.assetId, assets.id))
-      .where(and(...conditions))
-      .limit(limit)
-      .offset((page - 1) * limit)
-      .orderBy(orderBy || desc(transactions.date)),
-  ])
-
-  const total = countResult[0]?.total ?? 0
-  const incomeSum = parseFloat(sumsResult[0]?.incomeSum ?? '0') || 0
-  const expenseSum = parseFloat(sumsResult[0]?.expenseSum ?? '0') || 0
+  const query = await getValidatedQuery(event, transactionsQuerySchema.parse)
+  const { data, pagination, sums } = await listTransactions(user.id, query)
 
   return {
     success: true,
     message: 'Transactions fetched successfully',
-    data: items.map(
-      ({ transactions, accounts, categories, to_accounts, tx, assets }) =>
-        mapTransactionToDTO(
-          transactions,
-          accounts,
-          categories,
-          to_accounts,
-          tx,
-          assets
-        )
-    ),
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-    sums: { incomeSum, expenseSum },
+    data,
+    pagination,
+    sums,
   }
 })

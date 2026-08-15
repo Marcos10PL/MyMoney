@@ -66,3 +66,4 @@ export const transactionsQuerySchema = z.object({
 export type TransactionFilters = z.infer<typeof transactionQueryFiltersSchema>
 export type TransactionsSortableColumns =
   (typeof sortableTransactionColumns)[number]
+export type TransactionsQuery = z.infer<typeof transactionsQuerySchema>

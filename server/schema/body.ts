@@ -78,41 +78,43 @@ export const createBankBodySchema = z.object({
 
 export const updateBankBodySchema = createBankBodySchema
 
+export const transactionBodyShape = {
+  name: textFieldSchema(
+    VALIDATION.TRANSACTION_NAME_MIN_LENGTH,
+    VALIDATION.TRANSACTION_NAME_MAX_LENGTH
+  ),
+  accountId: idFieldSchema,
+  categoryId: idFieldSchema.optional().nullable(),
+  toAccountId: idFieldSchema.optional().nullable(),
+  transactionId: idFieldSchema.optional().nullable(),
+  counterparty: textFieldSchema(
+    VALIDATION.TRANSACTION_COUNTERPARTY_MIN_LENGTH,
+    VALIDATION.TRANSACTION_COUNTERPARTY_MAX_LENGTH
+  )
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? null : val)),
+
+  type: z.enum(TRANSACTION_TYPES),
+  amount: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
+  description: textFieldSchema(
+    VALIDATION.TRANSACTION_DESCRIPTION_MIN_LENGTH,
+    VALIDATION.TRANSACTION_DESCRIPTION_MAX_LENGTH
+  )
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? null : val)),
+  date: z.iso.datetime(),
+
+  assetId: idFieldSchema.optional().nullable(),
+  quantity: z.number().positive().optional().nullable(),
+  marketValue: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX)
+    .optional()
+    .nullable(),
+}
+
 export const createTransactionBodySchema = z
-  .object({
-    name: textFieldSchema(
-      VALIDATION.TRANSACTION_NAME_MIN_LENGTH,
-      VALIDATION.TRANSACTION_NAME_MAX_LENGTH
-    ),
-    accountId: idFieldSchema,
-    categoryId: idFieldSchema.optional().nullable(),
-    toAccountId: idFieldSchema.optional().nullable(),
-    transactionId: idFieldSchema.optional().nullable(),
-    counterparty: textFieldSchema(
-      VALIDATION.TRANSACTION_COUNTERPARTY_MIN_LENGTH,
-      VALIDATION.TRANSACTION_COUNTERPARTY_MAX_LENGTH
-    )
-      .optional()
-      .or(z.literal(''))
-      .transform((val) => (val === '' ? null : val)),
-
-    type: z.enum(TRANSACTION_TYPES),
-    amount: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
-    description: textFieldSchema(
-      VALIDATION.TRANSACTION_DESCRIPTION_MIN_LENGTH,
-      VALIDATION.TRANSACTION_DESCRIPTION_MAX_LENGTH
-    )
-      .optional()
-      .or(z.literal(''))
-      .transform((val) => (val === '' ? null : val)),
-    date: z.iso.datetime(),
-
-    assetId: idFieldSchema.optional().nullable(),
-    quantity: z.number().positive().optional().nullable(),
-    marketValue: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX)
-      .optional()
-      .nullable(),
-  })
+  .object(transactionBodyShape)
   .superRefine((data, ctx) => {
     if (data.type === TRANSACTION_TYPES.TRANSFER && !data.toAccountId) {
       ctx.addIssue({
@@ -245,3 +247,7 @@ export const assetSnapshotBodySchema = z.object({
   value: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),
   date: z.iso.date().optional(),
 })
+
+// --- TYPES ---
+export type CreateTransactionBody = z.infer<typeof createTransactionBodySchema>
+export type UpdateTransactionBody = z.infer<typeof updateTransactionBodySchema>

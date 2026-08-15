@@ -26,19 +26,17 @@ const SORT_OPTIONS: SortOption[] = [
   { label: 'Wydatki', value: 'expenseSum', icon: 'i-heroicons-arrow-up-right' },
 ]
 
+const activeAccounts = computed(() => accounts.filter((a) => a.isActive))
+
 const sorted = computed(() => {
-  const arr = [...accounts]
+  const arr = [...activeAccounts.value]
 
-  if (sortKey.value === 'default')
-    return arr.sort((a, b) => Number(b.isActive) - Number(a.isActive))
+  if (sortKey.value === 'default') return arr
 
-  return arr.sort((a, b) => {
-    const diff = b[sortKey.value as never] - a[sortKey.value as never]
-    return diff !== 0 ? diff : Number(b.isActive) - Number(a.isActive)
-  })
+  return arr.sort((a, b) => b[sortKey.value as never] - a[sortKey.value as never])
 })
 
-const hasUnassigned = computed(() => accounts.some((a) => !a.bank))
+const hasUnassigned = computed(() => activeAccounts.value.some((a) => !a.bank))
 
 const tabs = computed(() => [
   { label: 'Wszystkie', value: 'all' },

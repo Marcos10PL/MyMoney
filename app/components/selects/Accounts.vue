@@ -8,15 +8,19 @@ const store = useAccountsStore()
 
 onMounted(() => store.fetchAccounts())
 
-const items = computed(() => {
-  return store.accounts.map((account) => ({
-    value: account.id,
-    label: `${account.name}${account.bank ? ` (${account.bank.name})` : ''}`,
-    balance: account.balance,
-  }))
+const model = defineModel<string | string[]>()
+
+const toItem = (account: Account) => ({
+  value: account.id,
+  label: `${account.name}${account.bank ? ` (${account.bank.name})` : ''}`,
+  balance: account.balance,
 })
 
-const model = defineModel<string | string[]>()
+const items = computed(() =>
+  [...store.accounts]
+    .sort((a, b) => Number(b.isActive) - Number(a.isActive))
+    .map(toItem)
+)
 
 const displayModel = computed({
   get: () => {

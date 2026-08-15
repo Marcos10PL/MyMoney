@@ -22,7 +22,7 @@ export type CategoryStat = {
   percent: number
 }
 
-export type StatsResponse = APIResponse<{
+export type DashboardStats = {
   totals: {
     balance: number
     income: number
@@ -36,7 +36,9 @@ export type StatsResponse = APIResponse<{
   banks: Bank[]
   topExpenseCategories: CategoryStat[]
   topIncomeCategories: CategoryStat[]
-}>
+}
+
+export type StatsResponse = APIResponse<DashboardStats>
 // ---- COMMON RESPONSE TYPE ----
 
 export type APIResponse<T = unknown> = {

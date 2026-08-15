@@ -48,9 +48,14 @@ const { data, pending, error, refresh } = useLazyFetch('/api/transactions', {
 })
 
 const modalOpen = ref(false)
+const investmentModalOpen = ref(false)
 const deleteModalOpen = ref(false)
 const deleteLoading = ref(false)
 const transactionValue = ref<Transaction | null>(null)
+
+const isInvestmentTransaction = (transaction: Transaction) =>
+  transaction.type === TRANSACTION_TYPES.INVESTMENT_BUY ||
+  transaction.type === TRANSACTION_TYPES.INVESTMENT_SELL
 
 const columns = createColumns<Transaction>(
   [
@@ -99,7 +104,11 @@ const actionColumn = createActionColumn<Transaction>('Akcje', [
     edit: true,
     onClick: (transaction) => {
       transactionValue.value = transaction
-      modalOpen.value = true
+      if (isInvestmentTransaction(transaction)) {
+        investmentModalOpen.value = true
+      } else {
+        modalOpen.value = true
+      }
     },
   },
   {
@@ -119,6 +128,7 @@ const openCreateModal = () => {
 const resetModal = async () => {
   transactionValue.value = null
   modalOpen.value = false
+  investmentModalOpen.value = false
   refresh()
 }
 
@@ -253,6 +263,13 @@ const columnVisibility = useLocalStorage('table-columns-transactions', {})
     <!-- MODALS -->
     <ModalFormTransaction
       v-model:open="modalOpen"
+      :row="transactionValue"
+      @success="resetModal"
+    />
+
+    <ModalFormInvestmentBuy
+      v-model:open="investmentModalOpen"
+      :preselected-asset-id="transactionValue?.asset?.id"
       :row="transactionValue"
       @success="resetModal"
     />

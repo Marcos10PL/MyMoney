@@ -21,6 +21,8 @@ export const users = pgTable(
 
     role: roleEnum('role').notNull(),
 
+    mcpTokenHash: text('mcp_token_hash').unique(),
+
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
