@@ -1,6 +1,7 @@
 import {
   index,
   numeric,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -33,6 +34,8 @@ export const portfolios = pgTable(
   (t) => [index('portfolios_user_id_idx').on(t.userId)]
 )
 
+export const allocationModeEnum = pgEnum('allocation_mode', ['value', 'cost'])
+
 export const portfolioAssets = pgTable(
   'portfolio_assets',
   {
@@ -45,14 +48,13 @@ export const portfolioAssets = pgTable(
       .notNull()
       .references(() => assets.id, { onDelete: 'cascade' }),
 
-    // how much of this asset is allocated to this portfolio
     allocatedAmount: numeric('allocated_amount', { precision: 15, scale: 2 }),
+    allocationMode: allocationModeEnum('allocation_mode')
+      .notNull()
+      .default('value'),
 
-    // target allocation within the portfolio (0-100)
     targetPercent: numeric('target_percent', { precision: 5, scale: 2 }),
-    // acceptable deviation in percentage points, e.g. 3 means ±3%
     maxDeviation: numeric('max_deviation', { precision: 5, scale: 2 }),
-    // explicit gain attribution weight (0-100); null = proportional to effectiveValue/currentValue
     gainWeight: numeric('gain_weight', { precision: 5, scale: 2 }),
 
     createdAt: timestamp('created_at', { withTimezone: true })

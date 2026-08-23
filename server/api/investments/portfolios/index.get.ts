@@ -1,11 +1,10 @@
-import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
 import {
   assetAccounts,
   assets,
   portfolioAssets,
   portfolios,
-  transactions,
 } from '~~/server/db/schema'
 
 export default defineEventHandler(async (event) => {
@@ -35,8 +34,8 @@ export default defineEventHandler(async (event) => {
 
   const assetIds = paRows.flatMap((r) => (r.assets ? [r.assets.id] : []))
 
-  const [assetAccountLinks, accountBalances, costBasisRows] = await Promise.all(
-    [
+  const [assetAccountLinks, accountBalances, costBasisByAsset] =
+    await Promise.all([
       assetIds.length > 0
         ? db
             .select()
@@ -44,30 +43,8 @@ export default defineEventHandler(async (event) => {
             .where(inArray(assetAccounts.assetId, assetIds))
         : Promise.resolve([]),
       computeAccountBalances(user.id),
-      assetIds.length > 0
-        ? db
-            .select({
-              assetId: transactions.assetId,
-              costBasis: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'investment_buy' THEN ${transactions.amount}::numeric ELSE -${transactions.amount}::numeric END), 0)`,
-            })
-            .from(transactions)
-            .where(
-              and(
-                eq(transactions.userId, user.id),
-                isNotNull(transactions.assetId),
-                inArray(transactions.assetId, assetIds)
-              )
-            )
-            .groupBy(transactions.assetId)
-        : Promise.resolve([]),
-    ]
-  )
-
-  const costBasisByAsset = new Map<string, number>()
-  for (const row of costBasisRows) {
-    if (row.assetId)
-      costBasisByAsset.set(row.assetId, parseFloat(row.costBasis))
-  }
+      getAssetsCostBasis(assetIds, user.id),
+    ])
 
   const linkedAccountIdsByAsset = new Map<string, string[]>()
   for (const link of assetAccountLinks) {
@@ -92,11 +69,25 @@ export default defineEventHandler(async (event) => {
   const explicitAllocByAsset = new Map<string, number>()
   for (const { portfolio_assets: pa } of paRows) {
     if (pa.allocatedAmount == null) continue
+    const raw = parseFloat(pa.allocatedAmount)
+    const costBasis = costBasisByAsset.get(pa.assetId) ?? 0
+    const currentValue = currentValueByAsset.get(pa.assetId) ?? 0
+    const valueEquivalent = toValueEquivalent(
+      raw,
+      pa.allocationMode,
+      costBasis,
+      currentValue
+    )
     explicitAllocByAsset.set(
       pa.assetId,
-      (explicitAllocByAsset.get(pa.assetId) ?? 0) +
-        parseFloat(pa.allocatedAmount)
+      (explicitAllocByAsset.get(pa.assetId) ?? 0) + valueEquivalent
     )
+  }
+
+  const overAllocationByAsset = new Map<string, number>()
+  for (const [assetId, allocated] of explicitAllocByAsset) {
+    const overage = allocated - (currentValueByAsset.get(assetId) ?? 0)
+    if (overage > 0.005) overAllocationByAsset.set(assetId, overage)
   }
 
   const paByPortfolio = new Map<
@@ -107,6 +98,7 @@ export default defineEventHandler(async (event) => {
       currentValue: number
       remainingValue: number
       costBasis: number
+      overAllocatedBy: number | null
     }>
   >()
 
@@ -118,8 +110,16 @@ export default defineEventHandler(async (event) => {
       currentValue - (explicitAllocByAsset.get(asset.id) ?? 0)
     )
     const costBasis = costBasisByAsset.get(asset.id) ?? 0
+    const overAllocatedBy = overAllocationByAsset.get(asset.id) ?? null
     const list = paByPortfolio.get(pa.portfolioId) ?? []
-    list.push({ pa, asset, currentValue, remainingValue, costBasis })
+    list.push({
+      pa,
+      asset,
+      currentValue,
+      remainingValue,
+      costBasis,
+      overAllocatedBy,
+    })
     paByPortfolio.set(pa.portfolioId, list)
   }
 

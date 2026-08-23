@@ -21,6 +21,7 @@ const setDefaults = (): Schema => ({
   assetId: row?.asset.id ?? '',
   allocatedAmount:
     row?.allocatedAmount != null ? parseFloat(row.allocatedAmount) : null,
+  allocationMode: row?.allocationMode ?? ALLOCATION_MODES.VALUE,
   targetPercent:
     row?.targetPercent != null ? parseFloat(row.targetPercent) : null,
   maxDeviation: row?.maxDeviation != null ? parseFloat(row.maxDeviation) : null,
@@ -30,40 +31,55 @@ const setDefaults = (): Schema => ({
 const state = reactive<Schema>(setDefaults())
 watch(open, () => Object.assign(state, setDefaults()), { immediate: true })
 
-const allocatedElsewhere = computed(() => {
-  if (!state.assetId) return 0
+const isCostMode = computed(
+  () => state.allocationMode === ALLOCATION_MODES.COST
+)
 
-  let explicit = 0
-  let hasNullOther = false
+const selectedAsset = computed(() => assets.find((a) => a.id === state.assetId))
+const assetCurrentValue = computed(() => selectedAsset.value?.currentValue ?? 0)
+const assetCostBasis = computed(() => selectedAsset.value?.costBasis ?? 0)
+const costModeDisabled = computed(() => assetCostBasis.value <= 0)
+
+const allocatedElsewhereValue = computed(() => {
+  if (!state.assetId) return 0
+  let sum = 0
   for (const p of portfolios) {
     for (const e of p.assets) {
       if (e.asset.id !== state.assetId) continue
       if (row && e.id === row.id) continue
-      if (e.allocatedAmount != null) {
-        explicit += parseFloat(e.allocatedAmount)
-      } else {
-        hasNullOther = true
-      }
+      sum += e.effectiveValue
     }
   }
-
-  if (!hasNullOther) return explicit
-
-  const selfStored =
-    row?.allocatedAmount != null ? parseFloat(row.allocatedAmount) : 0
-  const nullEffective = Math.max(
-    0,
-    assetCurrentValue.value - explicit - selfStored
-  )
-  return explicit + nullEffective
+  return sum
 })
 
-const assetCurrentValue = computed(
-  () => assets.find((a) => a.id === state.assetId)?.currentValue ?? 0
+const allocatedElsewhereCost = computed(() => {
+  if (assetCurrentValue.value <= 0) return 0
+  return (
+    (allocatedElsewhereValue.value / assetCurrentValue.value) *
+    assetCostBasis.value
+  )
+})
+
+const basisTotal = computed(() =>
+  isCostMode.value ? assetCostBasis.value : assetCurrentValue.value
+)
+const allocatedElsewhere = computed(() =>
+  isCostMode.value
+    ? allocatedElsewhereCost.value
+    : allocatedElsewhereValue.value
 )
 
 const freeToAllocate = computed(() =>
-  Math.max(0, assetCurrentValue.value - allocatedElsewhere.value)
+  Math.max(0, basisTotal.value - allocatedElsewhere.value)
+)
+
+const currentEntryAmount = computed(() => {
+  if (!row || row.allocationMode !== state.allocationMode) return 0
+  return row.allocatedAmount != null ? parseFloat(row.allocatedAmount) : 0
+})
+const inputMax = computed(() =>
+  Math.max(freeToAllocate.value, currentEntryAmount.value)
 )
 
 const displayFree = computed(() => {
@@ -73,6 +89,19 @@ const displayFree = computed(() => {
   if (row) return 0
   return freeToAllocate.value
 })
+
+const liveOverAllocatedBy = computed(() => {
+  if (state.allocatedAmount == null) return null
+  const overage =
+    allocatedElsewhere.value + state.allocatedAmount - basisTotal.value
+  return overage > 0.005 ? overage : null
+})
+
+const onAllocationModeChange = (mode: Schema['allocationMode']) => {
+  if (mode === state.allocationMode) return
+  state.allocationMode = mode
+  state.allocatedAmount = null
+}
 
 const loading = ref(false)
 
@@ -86,6 +115,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           method: 'PUT',
           body: {
             allocatedAmount: event.data.allocatedAmount ?? null,
+            allocationMode: event.data.allocationMode,
             targetPercent: event.data.targetPercent ?? null,
             maxDeviation: event.data.maxDeviation ?? null,
             gainWeight: event.data.gainWeight ?? null,
@@ -144,14 +174,40 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           />
         </UFormField>
 
+        <UFormField
+          v-if="state.assetId"
+          name="allocationMode"
+          label="Podział wg"
+        >
+          <URadioGroup
+            :model-value="state.allocationMode"
+            :items="[
+              { label: 'Wartości bieżącej', value: ALLOCATION_MODES.VALUE },
+              {
+                label: 'Kosztu nabycia',
+                value: ALLOCATION_MODES.COST,
+                disabled: costModeDisabled,
+              },
+            ]"
+            orientation="horizontal"
+            variant="table"
+            class="w-full *:*:w-full *:*:cursor-pointer"
+            indicator="hidden"
+            @update:model-value="onAllocationModeChange"
+          />
+          <p v-if="costModeDisabled" class="text-xs text-muted mt-1">
+            Podział wg kosztu wymaga transakcji zakupu tego aktywa.
+          </p>
+        </UFormField>
+
         <p
-          v-if="state.assetId && assetCurrentValue > 0"
+          v-if="state.assetId && basisTotal > 0"
           class="text-xs flex flex-col gap-0.5 text-muted -mt-2"
         >
           <span>
-            Wartość aktywa:
+            {{ isCostMode ? 'Koszt nabycia aktywa' : 'Wartość aktywa' }}:
             <span class="font-mono font-semibold pl-1">
-              {{ formatCurrency(assetCurrentValue, { includeZero: true }) }}
+              {{ formatCurrency(basisTotal, { includeZero: true }) }}
             </span>
           </span>
           <span>
@@ -190,15 +246,34 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           </template>
         </p>
 
+        <UAlert
+          v-if="liveOverAllocatedBy != null"
+          variant="subtle"
+          color="error"
+        >
+          <template #description>
+            Ta pozycja razem z innymi przekracza dostępną
+            {{ isCostMode ? 'wartość kosztu' : 'wartość' }} aktywa o
+            {{ formatCurrency(liveOverAllocatedBy) }}. Zmniejsz kwotę albo
+            popraw inne pozycje tego aktywa.
+          </template>
+        </UAlert>
+
         <UiInputNumber
           v-model="state.allocatedAmount"
           name="allocatedAmount"
-          label="Przydzielona kwota (opcjonalnie)"
-          :required="false"
+          :label="
+            isCostMode
+              ? 'Przydzielony koszt nabycia'
+              : 'Przydzielona kwota (opcjonalnie)'
+          "
+          :required="isCostMode"
           :min="0"
           :format-options="{ maximumFractionDigits: 2 }"
-          placeholder="puste = cała nieprzydzielona kwota"
-          :max="freeToAllocate"
+          :placeholder="
+            isCostMode ? 'np. 20000' : 'puste = cała nieprzydzielona kwota'
+          "
+          :max="inputMax"
         />
 
         <div class="grid grid-cols-2 gap-3">
@@ -215,7 +290,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           <UiInputNumber
             v-model="state.maxDeviation"
             name="maxDeviation"
-            label="Maks. odchylenie % (opcjonalnie)"
+            label="Maks. odchylenie (pp, opcjonalnie)"
             :required="false"
             :min="0"
             :max="100"

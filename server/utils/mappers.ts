@@ -38,6 +38,17 @@ export const mapAssetToDTO = (
   }
 }
 
+const getEffectiveValue = (
+  pa: AppPortfolioAsset,
+  currentValue: number,
+  costBasis: number,
+  remainingValue: number
+): number => {
+  if (pa.allocatedAmount === null) return remainingValue
+  const raw = parseFloat(pa.allocatedAmount) || 0
+  return toValueEquivalent(raw, pa.allocationMode, costBasis, currentValue)
+}
+
 export const mapPortfolioToDTO = (
   portfolio: AppPortfolio,
   entries: Array<{
@@ -46,25 +57,33 @@ export const mapPortfolioToDTO = (
     currentValue: number
     remainingValue: number
     costBasis: number
+    overAllocatedBy: number | null
   }>
 ): Portfolio => {
-  const totalValue = entries.reduce((sum, { pa, remainingValue }) => {
-    const effective =
-      pa.allocatedAmount !== null
-        ? parseFloat(pa.allocatedAmount) || 0
-        : remainingValue
-    return sum + effective
-  }, 0)
+  const totalValue = entries.reduce(
+    (sum, { pa, currentValue, remainingValue, costBasis }) =>
+      sum + getEffectiveValue(pa, currentValue, costBasis, remainingValue),
+    0
+  )
 
   let totalCostBasis = 0
   let totalGain = 0
 
   const assets: PortfolioAssetEntry[] = entries.map(
-    ({ pa, asset, currentValue, remainingValue, costBasis }) => {
-      const effectiveValue =
-        pa.allocatedAmount !== null
-          ? parseFloat(pa.allocatedAmount) || 0
-          : remainingValue
+    ({
+      pa,
+      asset,
+      currentValue,
+      remainingValue,
+      costBasis,
+      overAllocatedBy,
+    }) => {
+      const effectiveValue = getEffectiveValue(
+        pa,
+        currentValue,
+        costBasis,
+        remainingValue
+      )
       const proportion = currentValue > 0 ? effectiveValue / currentValue : 1
       let entryCostBasis: number
       let entryGain: number
@@ -96,6 +115,7 @@ export const mapPortfolioToDTO = (
         id: pa.id,
         asset: { id: asset.id, name: asset.name, type: asset.type },
         allocatedAmount: pa.allocatedAmount,
+        allocationMode: pa.allocationMode,
         targetPercent: pa.targetPercent,
         maxDeviation: pa.maxDeviation,
         gainWeight: pa.gainWeight,
@@ -106,6 +126,7 @@ export const mapPortfolioToDTO = (
         actualPercent,
         drift,
         isDrifting,
+        overAllocatedBy: pa.allocatedAmount !== null ? overAllocatedBy : null,
       }
     }
   )

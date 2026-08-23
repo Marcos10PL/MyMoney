@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
   await validateAllocation(
     pa.assetId,
     body.allocatedAmount ?? null,
+    body.allocationMode,
     user.id,
     paId
   )
@@ -31,6 +32,7 @@ export default defineEventHandler(async (event) => {
     .set({
       allocatedAmount:
         body.allocatedAmount != null ? String(body.allocatedAmount) : null,
+      allocationMode: body.allocationMode,
       targetPercent:
         body.targetPercent != null ? String(body.targetPercent) : null,
       maxDeviation:

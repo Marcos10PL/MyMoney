@@ -85,11 +85,44 @@ const periodStats = computed(() => {
   return { last, gain, gainPct, netInvested }
 })
 
+const sortedTx = computed(() =>
+  [...(props.transactions ?? [])].sort((a, b) => a.date.localeCompare(b.date))
+)
+
+const costBasisSeries = computed(() => {
+  const tx = sortedTx.value
+  if (tx.length === 0) return []
+
+  const points: [number, number][] = []
+  let cumulative = 0
+  let txIndex = 0
+
+  for (const s of clippedData.value) {
+    while (txIndex < tx.length && tx[txIndex]!.date <= s.date) {
+      const t = tx[txIndex]!
+      cumulative +=
+        t.type === TRANSACTION_TYPES.INVESTMENT_BUY ? t.amount : -t.amount
+      txIndex++
+    }
+    points.push([new Date(s.date).getTime(), cumulative])
+  }
+
+  return points
+})
+
 const series = computed(() => [
   {
     name: 'Wartość rynkowa',
     data: clippedData.value.map((s) => [new Date(s.date).getTime(), s.value]),
   },
+  ...(costBasisSeries.value.length > 0
+    ? [
+        {
+          name: 'Kapitał zainwestowany',
+          data: costBasisSeries.value,
+        },
+      ]
+    : []),
 ])
 
 const isDark = computed(() => colorMode.value === 'dark')
@@ -97,7 +130,7 @@ const isDark = computed(() => colorMode.value === 'dark')
 const yAxisFormatter = (val: number) =>
   formatCurrency(val, { fractionDigits: 0 })
 const tooltipYFormatter = (val: number) => formatCurrency(val)
-const tooltipTitleFormatter = () => ''
+const xAxisDateFormatter = (val: number) => formatDate(new Date(val))
 
 const chartEvents = {
   mounted: (ctx: { updateSeries: (s: unknown[], redraw: boolean) => void }) => {
@@ -142,11 +175,12 @@ const options = computed(() => ({
     fontFamily: 'inherit',
   },
   theme: { mode: isDark.value ? 'dark' : 'light' },
-  colors: ['#3b82f6'],
+  colors: ['#3b82f6', '#94a3b8'],
   dataLabels: { enabled: false },
-  stroke: { curve: 'smooth', width: 2 },
+  stroke: { curve: 'smooth', width: [2, 2], dashArray: [0, 4] },
   fill: {
-    type: 'gradient',
+    type: ['gradient', 'solid'],
+    opacity: [1, 0],
     gradient: {
       shadeIntensity: 1,
       opacityFrom: 0.25,
@@ -154,6 +188,7 @@ const options = computed(() => ({
       stops: [0, 100],
     },
   },
+  legend: { show: false },
   grid: {
     borderColor: isDark.value ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
     strokeDashArray: 4,
@@ -165,7 +200,7 @@ const options = computed(() => ({
     labels: {
       datetimeUTC: false,
       style: { fontSize: '11px' },
-      format: 'dd MMM yy',
+      formatter: xAxisDateFormatter,
     },
     axisBorder: { show: false },
     axisTicks: { show: false },
@@ -178,11 +213,8 @@ const options = computed(() => ({
   },
   tooltip: {
     theme: isDark.value ? 'dark' : 'light',
-    x: { format: 'dd MMM yyyy' },
-    y: {
-      formatter: tooltipYFormatter,
-      title: { formatter: tooltipTitleFormatter },
-    },
+    x: { formatter: xAxisDateFormatter },
+    y: { formatter: tooltipYFormatter },
   },
   annotations: {
     xaxis: clippedTx.value.map((t) => {
@@ -289,13 +321,21 @@ const options = computed(() => ({
 
     <div
       v-if="(transactions?.length ?? 0) > 0"
-      class="flex gap-4 mt-2 text-xs text-muted"
+      class="flex flex-wrap gap-4 mt-2 text-xs text-muted"
     >
       <span class="flex items-center gap-1.5">
-        <span class="text-success font-bold">▲</span> Zakup
+        <span class="inline-block size-2 rounded-full bg-[#3b82f6]" /> Wartość
+        rynkowa
+      </span>
+      <span v-if="costBasisSeries.length > 0" class="flex items-center gap-1.5">
+        <span class="inline-block size-2 rounded-full bg-[#94a3b8]" /> Kapitał
+        zainwestowany
       </span>
       <span class="flex items-center gap-1.5">
-        <span class="text-error font-bold">▼</span> Sprzedaż
+        <span class="inline-block size-2 rounded-full bg-success" /> Zakup
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block size-2 rounded-full bg-error" /> Sprzedaż
       </span>
     </div>
   </div>

@@ -231,17 +231,46 @@ export const createPortfolioBodySchema = z.object({
 
 export const updatePortfolioBodySchema = createPortfolioBodySchema
 
-export const addPortfolioAssetBodySchema = z.object({
-  assetId: idFieldSchema,
+const portfolioAssetShape = {
   allocatedAmount: decimalFieldSchema().optional().nullable(),
   targetPercent: decimalFieldSchema(0, 100).optional().nullable(),
   maxDeviation: decimalFieldSchema(0, 100).optional().nullable(),
   gainWeight: decimalFieldSchema(0, 100).optional().nullable(),
-})
+}
 
-export const updatePortfolioAssetBodySchema = addPortfolioAssetBodySchema.omit({
-  assetId: true,
-})
+const requireAmountForCostMode = (
+  data: {
+    allocationMode: string
+    allocatedAmount?: number | null
+  },
+  ctx: z.RefinementCtx
+) => {
+  if (
+    data.allocationMode === ALLOCATION_MODES.COST &&
+    data.allocatedAmount == null
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Amount is required when allocation mode is cost',
+      path: ['allocatedAmount'],
+    })
+  }
+}
+
+export const addPortfolioAssetBodySchema = z
+  .object({
+    assetId: idFieldSchema,
+    allocationMode: z.enum(ALLOCATION_MODES).default(ALLOCATION_MODES.VALUE),
+    ...portfolioAssetShape,
+  })
+  .superRefine(requireAmountForCostMode)
+
+export const updatePortfolioAssetBodySchema = z
+  .object({
+    allocationMode: z.enum(ALLOCATION_MODES),
+    ...portfolioAssetShape,
+  })
+  .superRefine(requireAmountForCostMode)
 
 export const assetSnapshotBodySchema = z.object({
   value: decimalFieldSchema(0.01, VALIDATION.TRANSACTION_AMOUNT_MAX),

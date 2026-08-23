@@ -39,7 +39,12 @@ export type Asset = Omit<AppAsset, 'userId' | 'value'> & {
 
 export type PortfolioAssetEntry = Pick<
   AppPortfolioAsset,
-  'id' | 'allocatedAmount' | 'targetPercent' | 'maxDeviation' | 'gainWeight'
+  | 'id'
+  | 'allocatedAmount'
+  | 'allocationMode'
+  | 'targetPercent'
+  | 'maxDeviation'
+  | 'gainWeight'
 > & {
   asset: Pick<AppAsset, 'id' | 'name' | 'type'>
   effectiveValue: number
@@ -49,6 +54,7 @@ export type PortfolioAssetEntry = Pick<
   actualPercent: number
   drift: number | null
   isDrifting: boolean
+  overAllocatedBy: number | null
 }
 
 export type Portfolio = Omit<AppPortfolio, 'userId'> & {

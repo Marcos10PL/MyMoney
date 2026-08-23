@@ -75,7 +75,7 @@ provide(assetDetailLayoutKey, {
       </div>
 
       <UButton
-        variant="ghost"
+        variant="soft"
         class="w-full uppercase py-2 justify-between"
         color="neutral"
         :trailing-icon="

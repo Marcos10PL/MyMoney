@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { h } from 'vue'
-import { UIcon } from '#components'
+import { UIcon, UTooltip } from '#components'
 
 const props = defineProps<{
   portfolios: Portfolio[]
@@ -133,6 +133,9 @@ const portfolioEntriesWithColor = (portfolio: Portfolio): PARow[] =>
     _color: ASSET_TYPE_META[entry.asset.type].color,
   }))
 
+const portfolioGainPercent = (p: Portfolio) =>
+  p.totalCostBasis > 0 ? (p.totalGain / p.totalCostBasis) * 100 : null
+
 const colorVal = (val: number, fmt: string) =>
   h(
     'span',
@@ -162,10 +165,30 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
             }),
             h('span', {}, row.asset.name),
             row.isDrifting
-              ? h(UIcon, {
-                  name: 'i-lucide-alert-triangle',
-                  class: 'text-error text-sm',
-                })
+              ? h(
+                  UTooltip,
+                  {
+                    text: 'Aktualny przydział aktywa różni się od docelowego',
+                  },
+                  () =>
+                    h(UIcon, {
+                      name: 'i-lucide-circle-alert',
+                      class: 'text-warning text-sm',
+                    })
+                )
+              : null,
+            row.overAllocatedBy != null
+              ? h(
+                  UTooltip,
+                  {
+                    text: `Suma przydziałów tego aktywa przekracza jego wartość o ${formatCurrency(row.overAllocatedBy)}`,
+                  },
+                  () =>
+                    h(UIcon, {
+                      name: 'i-lucide-alert-triangle',
+                      class: 'text-error text-sm',
+                    })
+                )
               : null,
           ]),
       },
@@ -195,7 +218,7 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
       targetPercent: {
         mapValue: (_, row) =>
           row.targetPercent
-            ? `${formatPercent(parseFloat(row.targetPercent))}%${row.maxDeviation ? ` ±${formatPercent(parseFloat(row.maxDeviation), 0)}%` : ''}`
+            ? `${formatPercent(parseFloat(row.targetPercent))}%${row.maxDeviation ? ` ±${formatPercent(parseFloat(row.maxDeviation), 0)} pp` : ''}`
             : '—',
       },
       drift: {
@@ -205,10 +228,10 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
                 'span',
                 {
                   class: row.isDrifting
-                    ? 'text-error font-semibold'
+                    ? 'text-warning font-semibold'
                     : 'text-muted',
                 },
-                `${row.drift > 0 ? '+' : ''}${formatPercent(row.drift)}%`
+                `${row.drift > 0 ? '+' : ''}${formatPercent(row.drift)} pp`
               )
             : h('span', {}, '—'),
       },
@@ -328,6 +351,10 @@ const makePortfolioAssetColumns = (portfolioId: string) => [
             >
               {{ portfolio.totalGain > 0 ? '+' : ''
               }}{{ formatCurrency(portfolio.totalGain) }}
+              <template v-if="portfolioGainPercent(portfolio) !== null">
+                ({{ portfolioGainPercent(portfolio)! > 0 ? '+' : ''
+                }}{{ formatNumber(portfolioGainPercent(portfolio)!) }}%)
+              </template>
             </span>
           </div>
         </template>

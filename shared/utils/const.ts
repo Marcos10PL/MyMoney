@@ -80,3 +80,8 @@ export const ASSET_TYPES = {
   CASH: 'cash',
   OTHER: 'other',
 } as const satisfies Record<string, AppAssetType>
+
+export const ALLOCATION_MODES = {
+  VALUE: 'value',
+  COST: 'cost',
+} as const satisfies Record<string, AppAllocationMode>

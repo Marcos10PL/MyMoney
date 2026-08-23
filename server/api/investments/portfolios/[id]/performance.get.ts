@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { db } from '~~/server/db/conn'
 import {
+  assetAccounts,
   assetSnapshots,
   assets,
   portfolioAssets,
@@ -10,7 +11,10 @@ import { idParamSchema } from '~~/server/schema/query'
 
 export default defineEventHandler(async (event) => {
   const { user } = getEventContext(event)
-  const { id: portfolioId } = await getValidatedRouterParams(event, idParamSchema.parse)
+  const { id: portfolioId } = await getValidatedRouterParams(
+    event,
+    idParamSchema.parse
+  )
 
   await requirePortfolio(portfolioId, user.id)
 
@@ -30,16 +34,40 @@ export default defineEventHandler(async (event) => {
     } satisfies APIResponse<AssetPerformanceData>
   }
 
+  const [assetAccountLinks, accountBalances, costBasisByAsset] =
+    await Promise.all([
+      db
+        .select()
+        .from(assetAccounts)
+        .where(inArray(assetAccounts.assetId, assetIds)),
+      computeAccountBalances(user.id),
+      getAssetsCostBasis(assetIds, user.id),
+    ])
+
+  const linkedAccountIdsByAsset = new Map<string, string[]>()
+  for (const link of assetAccountLinks) {
+    const list = linkedAccountIdsByAsset.get(link.assetId) ?? []
+    list.push(link.accountId)
+    linkedAccountIdsByAsset.set(link.assetId, list)
+  }
+
   const currentValueByAsset = new Map<string, number>()
   for (const { assets: asset } of paRows) {
-    if (!asset) continue
-    currentValueByAsset.set(asset.id, parseFloat(asset.value) || 0)
+    if (!asset || currentValueByAsset.has(asset.id)) continue
+    const manual = parseFloat(asset.value) || 0
+    const linkedIds = linkedAccountIdsByAsset.get(asset.id) ?? []
+    const accountsSum = linkedIds.reduce(
+      (sum, aid) => sum + (accountBalances[aid] ?? 0),
+      0
+    )
+    currentValueByAsset.set(asset.id, manual > 0 ? manual : accountsSum)
   }
 
   const allExplicitAllocs = await db
     .select({
       assetId: portfolioAssets.assetId,
       allocatedAmount: portfolioAssets.allocatedAmount,
+      allocationMode: portfolioAssets.allocationMode,
     })
     .from(portfolioAssets)
     .where(
@@ -52,9 +80,15 @@ export default defineEventHandler(async (event) => {
   const totalExplicitByAsset = new Map<string, number>()
   for (const r of allExplicitAllocs) {
     if (!r.allocatedAmount) continue
+    const valueEquivalent = toValueEquivalent(
+      parseFloat(r.allocatedAmount),
+      r.allocationMode,
+      costBasisByAsset.get(r.assetId) ?? 0,
+      currentValueByAsset.get(r.assetId) ?? 0
+    )
     totalExplicitByAsset.set(
       r.assetId,
-      (totalExplicitByAsset.get(r.assetId) ?? 0) + parseFloat(r.allocatedAmount)
+      (totalExplicitByAsset.get(r.assetId) ?? 0) + valueEquivalent
     )
   }
 
@@ -68,7 +102,12 @@ export default defineEventHandler(async (event) => {
     )
     const effective =
       pa.allocatedAmount !== null
-        ? parseFloat(pa.allocatedAmount) || 0
+        ? toValueEquivalent(
+            parseFloat(pa.allocatedAmount) || 0,
+            pa.allocationMode,
+            costBasisByAsset.get(asset.id) ?? 0,
+            currentValue
+          )
         : remaining
     const proportion = currentValue > 0 ? effective / currentValue : 1
     proportionByAsset.set(asset.id, proportion)

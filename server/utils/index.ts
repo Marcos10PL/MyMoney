@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { and, desc, eq, isNotNull, isNull, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm'
 import { db, type DB } from '~~/server/db/conn'
 import {
   assetAccounts,
@@ -86,9 +86,53 @@ export const syncAssetValue = async (
     .where(eq(assets.id, assetId))
 }
 
+export const getAssetsCostBasis = async (
+  assetIds: string[],
+  userId: string
+): Promise<Map<string, number>> => {
+  const costBasisByAsset = new Map<string, number>()
+  if (assetIds.length === 0) return costBasisByAsset
+
+  const rows = await db
+    .select({
+      assetId: transactions.assetId,
+      costBasis: sql<string>`COALESCE(SUM(CASE
+        WHEN ${transactions.type} = 'investment_buy' THEN ${transactions.amount}::numeric
+        WHEN ${transactions.type} = 'investment_sell' THEN -${transactions.amount}::numeric
+        ELSE 0
+      END), 0)`,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        isNotNull(transactions.assetId),
+        inArray(transactions.assetId, assetIds)
+      )
+    )
+    .groupBy(transactions.assetId)
+
+  for (const row of rows) {
+    if (row.assetId)
+      costBasisByAsset.set(row.assetId, parseFloat(row.costBasis))
+  }
+  return costBasisByAsset
+}
+
+export const toValueEquivalent = (
+  rawAmount: number,
+  allocationMode: AppAllocationMode,
+  costBasis: number,
+  currentValue: number
+): number => {
+  if (allocationMode !== ALLOCATION_MODES.COST) return rawAmount
+  return costBasis > 0 ? (rawAmount / costBasis) * currentValue : 0
+}
+
 export const validateAllocation = async (
   assetId: string,
   allocatedAmount: number | null,
+  allocationMode: AppAllocationMode,
   userId: string,
   excludePaId?: string
 ): Promise<void> => {
@@ -118,11 +162,32 @@ export const validateAllocation = async (
     return
   }
 
-  const [asset] = await db
-    .select()
-    .from(assets)
-    .where(and(eq(assets.id, assetId), eq(assets.userId, userId)))
-    .limit(1)
+  const [[asset], costBasisMap, existingRows] = await Promise.all([
+    db
+      .select()
+      .from(assets)
+      .where(and(eq(assets.id, assetId), eq(assets.userId, userId)))
+      .limit(1),
+    getAssetsCostBasis([assetId], userId),
+    db
+      .select({
+        allocatedAmount: portfolioAssets.allocatedAmount,
+        allocationMode: portfolioAssets.allocationMode,
+      })
+      .from(portfolioAssets)
+      .where(
+        excludePaId
+          ? and(
+              eq(portfolioAssets.assetId, assetId),
+              isNotNull(portfolioAssets.allocatedAmount),
+              ne(portfolioAssets.id, excludePaId)
+            )
+          : and(
+              eq(portfolioAssets.assetId, assetId),
+              isNotNull(portfolioAssets.allocatedAmount)
+            )
+      ),
+  ])
 
   if (!asset) throw createError({ statusCode: 404, message: 'Asset not found' })
 
@@ -144,26 +209,23 @@ export const validateAllocation = async (
     }
   }
 
-  const [sumResult] = await db
-    .select({
-      existingSum: sql<string>`coalesce(sum(${portfolioAssets.allocatedAmount}), '0')`,
-    })
-    .from(portfolioAssets)
-    .where(
-      excludePaId
-        ? and(
-            eq(portfolioAssets.assetId, assetId),
-            isNotNull(portfolioAssets.allocatedAmount),
-            ne(portfolioAssets.id, excludePaId)
-          )
-        : and(
-            eq(portfolioAssets.assetId, assetId),
-            isNotNull(portfolioAssets.allocatedAmount)
-          )
-    )
+  const costBasis = costBasisMap.get(assetId) ?? 0
 
-  const existingAllocated = parseFloat(sumResult?.existingSum ?? '0')
-  if (existingAllocated + allocatedAmount > currentValue + 0.005) {
+  const newValueEquivalent = toValueEquivalent(
+    allocatedAmount,
+    allocationMode,
+    costBasis,
+    currentValue
+  )
+
+  const existingAllocated = existingRows.reduce((sum, row) => {
+    const raw = parseFloat(row.allocatedAmount!) || 0
+    return (
+      sum + toValueEquivalent(raw, row.allocationMode, costBasis, currentValue)
+    )
+  }, 0)
+
+  if (existingAllocated + newValueEquivalent > currentValue + 0.005) {
     throw createError({
       statusCode: 422,
       message: 'Allocated amount exceeds asset value',
