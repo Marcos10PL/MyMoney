@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: 'Portfolios fetched successfully',
-      data: [] as Portfolio[],
+      data: [],
     } satisfies APIResponse<Portfolio[]>
   }
 
@@ -66,23 +66,12 @@ export default defineEventHandler(async (event) => {
     currentValueByAsset.set(asset.id, currentValue)
   }
 
-  const explicitAllocByAsset = new Map<string, number>()
-  for (const { portfolio_assets: pa } of paRows) {
-    if (pa.allocatedAmount == null) continue
-    const raw = parseFloat(pa.allocatedAmount)
-    const costBasis = costBasisByAsset.get(pa.assetId) ?? 0
-    const currentValue = currentValueByAsset.get(pa.assetId) ?? 0
-    const valueEquivalent = toValueEquivalent(
-      raw,
-      pa.allocationMode,
-      costBasis,
-      currentValue
+  const { byValue: explicitAllocByAsset, byCost: explicitAllocByAssetCost } =
+    sumExplicitAllocations(
+      paRows.map((r) => r.portfolio_assets),
+      costBasisByAsset,
+      currentValueByAsset
     )
-    explicitAllocByAsset.set(
-      pa.assetId,
-      (explicitAllocByAsset.get(pa.assetId) ?? 0) + valueEquivalent
-    )
-  }
 
   const overAllocationByAsset = new Map<string, number>()
   for (const [assetId, allocated] of explicitAllocByAsset) {
@@ -104,14 +93,21 @@ export default defineEventHandler(async (event) => {
 
   for (const { portfolio_assets: pa, assets: asset } of paRows) {
     if (!asset) continue
+
     const currentValue = currentValueByAsset.get(asset.id) ?? 0
-    const remainingValue = Math.max(
-      0,
-      currentValue - (explicitAllocByAsset.get(asset.id) ?? 0)
-    )
     const costBasis = costBasisByAsset.get(asset.id) ?? 0
+
+    const remainingValue = resolveRemainingValue(
+      pa.allocationMode,
+      costBasis,
+      currentValue,
+      explicitAllocByAsset.get(asset.id) ?? 0,
+      explicitAllocByAssetCost.get(asset.id) ?? 0
+    )
+
     const overAllocatedBy = overAllocationByAsset.get(asset.id) ?? null
     const list = paByPortfolio.get(pa.portfolioId) ?? []
+
     list.push({
       pa,
       asset,
@@ -120,6 +116,7 @@ export default defineEventHandler(async (event) => {
       costBasis,
       overAllocatedBy,
     })
+
     paByPortfolio.set(pa.portfolioId, list)
   }
 

@@ -126,7 +126,73 @@ export const toValueEquivalent = (
   currentValue: number
 ): number => {
   if (allocationMode !== ALLOCATION_MODES.COST) return rawAmount
-  return costBasis > 0 ? (rawAmount / costBasis) * currentValue : 0
+  return costBasis > 0 ? (rawAmount / costBasis) * currentValue : rawAmount
+}
+
+export const toCostEquivalent = (
+  rawAmount: number,
+  allocationMode: AppAllocationMode,
+  costBasis: number,
+  currentValue: number
+): number => {
+  if (allocationMode === ALLOCATION_MODES.COST) return rawAmount
+  return currentValue > 0 ? (rawAmount / currentValue) * costBasis : rawAmount
+}
+
+export type AllocationEntry = {
+  assetId: string
+  allocatedAmount: string | null
+  allocationMode: AppAllocationMode
+}
+
+export const sumExplicitAllocations = (
+  rows: AllocationEntry[],
+  costBasisByAsset: Map<string, number>,
+  currentValueByAsset: Map<string, number>
+): { byValue: Map<string, number>; byCost: Map<string, number> } => {
+  const byValue = new Map<string, number>()
+  const byCost = new Map<string, number>()
+
+  for (const row of rows) {
+    if (row.allocatedAmount == null) continue
+    const raw = parseFloat(row.allocatedAmount)
+    const costBasis = costBasisByAsset.get(row.assetId) ?? 0
+    const currentValue = currentValueByAsset.get(row.assetId) ?? 0
+    const valueEquivalent = toValueEquivalent(
+      raw,
+      row.allocationMode,
+      costBasis,
+      currentValue
+    )
+    const costEquivalent = toCostEquivalent(
+      raw,
+      row.allocationMode,
+      costBasis,
+      currentValue
+    )
+    byValue.set(row.assetId, (byValue.get(row.assetId) ?? 0) + valueEquivalent)
+    byCost.set(row.assetId, (byCost.get(row.assetId) ?? 0) + costEquivalent)
+  }
+
+  return { byValue, byCost }
+}
+
+export const resolveRemainingValue = (
+  allocationMode: AppAllocationMode,
+  costBasis: number,
+  currentValue: number,
+  explicitValue: number,
+  explicitCost: number
+): number => {
+  if (allocationMode === ALLOCATION_MODES.COST) {
+    return toValueEquivalent(
+      Math.max(0, costBasis - explicitCost),
+      ALLOCATION_MODES.COST,
+      costBasis,
+      currentValue
+    )
+  }
+  return Math.max(0, currentValue - explicitValue)
 }
 
 export const validateAllocation = async (

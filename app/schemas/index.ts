@@ -170,27 +170,14 @@ export const portfolioSchema = z.object({
     .or(z.literal('')),
 })
 
-export const portfolioAssetSchema = z
-  .object({
-    assetId: idFieldSchema,
-    allocatedAmount: decimalFieldSchema().optional().nullable(),
-    allocationMode: z.enum(ALLOCATION_MODES).default(ALLOCATION_MODES.VALUE),
-    targetPercent: decimalFieldSchema(0, 100).optional().nullable(),
-    maxDeviation: decimalFieldSchema(0, 100).optional().nullable(),
-    gainWeight: decimalFieldSchema(0, 100).optional().nullable(),
-  })
-  .superRefine((data, ctx) => {
-    if (
-      data.allocationMode === ALLOCATION_MODES.COST &&
-      data.allocatedAmount == null
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Kwota jest wymagana przy trybie kosztowym',
-        path: ['allocatedAmount'],
-      })
-    }
-  })
+export const portfolioAssetSchema = z.object({
+  assetId: idFieldSchema,
+  allocatedAmount: decimalFieldSchema().optional().nullable(),
+  allocationMode: z.enum(ALLOCATION_MODES).default(ALLOCATION_MODES.VALUE),
+  targetPercent: decimalFieldSchema(0, 100).optional().nullable(),
+  maxDeviation: decimalFieldSchema(0, 100).optional().nullable(),
+  gainWeight: decimalFieldSchema(0, 100).optional().nullable(),
+})
 
 export const investmentBuySchema = z.object({
   assetId: idFieldSchema,

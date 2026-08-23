@@ -264,15 +264,13 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           name="allocatedAmount"
           :label="
             isCostMode
-              ? 'Przydzielony koszt nabycia'
+              ? 'Przydzielony koszt nabycia (opcjonalnie)'
               : 'Przydzielona kwota (opcjonalnie)'
           "
-          :required="isCostMode"
+          :required="false"
           :min="0"
           :format-options="{ maximumFractionDigits: 2 }"
-          :placeholder="
-            isCostMode ? 'np. 20000' : 'puste = cała nieprzydzielona kwota'
-          "
+          placeholder="puste = cała nieprzydzielona kwota"
           :max="inputMax"
         />
 

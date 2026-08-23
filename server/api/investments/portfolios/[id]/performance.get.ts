@@ -77,35 +77,31 @@ export default defineEventHandler(async (event) => {
       )
     )
 
-  const totalExplicitByAsset = new Map<string, number>()
-  for (const r of allExplicitAllocs) {
-    if (!r.allocatedAmount) continue
-    const valueEquivalent = toValueEquivalent(
-      parseFloat(r.allocatedAmount),
-      r.allocationMode,
-      costBasisByAsset.get(r.assetId) ?? 0,
-      currentValueByAsset.get(r.assetId) ?? 0
+  const { byValue: totalExplicitByAsset, byCost: totalExplicitByAssetCost } =
+    sumExplicitAllocations(
+      allExplicitAllocs,
+      costBasisByAsset,
+      currentValueByAsset
     )
-    totalExplicitByAsset.set(
-      r.assetId,
-      (totalExplicitByAsset.get(r.assetId) ?? 0) + valueEquivalent
-    )
-  }
 
   const proportionByAsset = new Map<string, number>()
   for (const { portfolio_assets: pa, assets: asset } of paRows) {
     if (!asset) continue
     const currentValue = currentValueByAsset.get(asset.id) ?? 0
-    const remaining = Math.max(
-      0,
-      currentValue - (totalExplicitByAsset.get(asset.id) ?? 0)
+    const costBasis = costBasisByAsset.get(asset.id) ?? 0
+    const remaining = resolveRemainingValue(
+      pa.allocationMode,
+      costBasis,
+      currentValue,
+      totalExplicitByAsset.get(asset.id) ?? 0,
+      totalExplicitByAssetCost.get(asset.id) ?? 0
     )
     const effective =
       pa.allocatedAmount !== null
         ? toValueEquivalent(
             parseFloat(pa.allocatedAmount) || 0,
             pa.allocationMode,
-            costBasisByAsset.get(asset.id) ?? 0,
+            costBasis,
             currentValue
           )
         : remaining
