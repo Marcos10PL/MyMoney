@@ -193,7 +193,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
               ? 'Kwota (PLN) — środki zwrócone'
               : 'Kwota (PLN) — środki wydane'
           "
-          :format-options="{ maximumFractionDigits: 2 }"
+          :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
           required
         />
 
@@ -243,7 +243,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
               :step="100"
               placeholder="0,00"
               label="Nowa wartość rynkowa (PLN)"
-              :format-options="{ maximumFractionDigits: 2 }"
+              :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
               :required="false"
             />
           </template>

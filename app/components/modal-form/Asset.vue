@@ -106,7 +106,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           :min="0"
           :max="VALIDATION.TRANSACTION_AMOUNT_MAX"
           :step="0.01"
-          :format-options="{ maximumFractionDigits: 2 }"
+          :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
         />
 
         <p v-if="linkedAccounts" class="text-sm text-muted -mt-2">

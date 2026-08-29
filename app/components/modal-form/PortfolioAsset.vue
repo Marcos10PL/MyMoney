@@ -269,7 +269,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           "
           :required="false"
           :min="0"
-          :format-options="{ maximumFractionDigits: 2 }"
+          :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
           placeholder="puste = cała nieprzydzielona kwota"
           :max="inputMax"
         />
@@ -282,7 +282,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
             :required="false"
             :min="0"
             :max="100"
-            :format-options="{ maximumFractionDigits: 2 }"
+            :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
             placeholder="np. 40"
           />
           <UiInputNumber
@@ -292,7 +292,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
             :required="false"
             :min="0"
             :max="100"
-            :format-options="{ maximumFractionDigits: 2 }"
+            :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
             placeholder="np. 3"
           />
         </div>
@@ -304,7 +304,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           :required="false"
           :min="0"
           :max="100"
-          :format-options="{ maximumFractionDigits: 2 }"
+          :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
           placeholder="puste = proporcjonalnie do wartości"
         />
 

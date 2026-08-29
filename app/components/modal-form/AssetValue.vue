@@ -90,7 +90,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
           :max="VALIDATION.TRANSACTION_AMOUNT_MAX"
           :step="100"
           placeholder="0,00"
-          :format-options="{ maximumFractionDigits: 2 }"
+          :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
           required
         />
         <UFormField name="date" label="Data pomiaru">

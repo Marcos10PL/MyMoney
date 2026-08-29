@@ -341,13 +341,15 @@ export const categoryStats = (
   total: number
 ): CategoryStat[] => {
   return [...map.entries()]
+    .filter(([id]) => id !== NONE_KEY)
     .map(([id, amount]) => ({
-      categoryId: id === NONE_KEY ? null : id,
+      categoryId: id,
       name: categoriesMap[id] ?? 'Bez kategorii',
       total: amount,
       percent: total > 0 ? (amount / total) * 100 : 0,
     }))
     .sort((a, b) => b.total - a.total)
+    .slice(0, 10)
 }
 
 export const modalCloseAnimation = () =>

@@ -19,11 +19,13 @@ const twoDecimals = (v: number) =>
   Math.abs(v * 100 - Math.round(v * 100)) < 1e-9
 const TWO_DECIMALS_MSG = 'Maksymalnie 2 miejsca po przecinku'
 
-export const decimalFieldSchema = (min = 0, max?: number) =>
-  (max != null ? z.number().min(min).max(max) : z.number().min(min)).refine(
+export const decimalFieldSchema = (min = 0, max?: number) => {
+  const number = z.number('Pole jest wymagane')
+  return (max != null ? number.min(min).max(max) : number.min(min)).refine(
     twoDecimals,
     TWO_DECIMALS_MSG
   )
+}
 
 export const textFieldSchema = (min: number, max: number) =>
   z
